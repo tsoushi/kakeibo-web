@@ -1,0 +1,52 @@
+version: '3.1'
+
+services:
+
+  mysql:
+    image: mysql:8.4
+    # MySQLの設定値を指定 
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --sql-mode=ONLY_FULL_GROUP_BY,NO_ENGINE_SUBSTITUTION
+
+    # コンテナ内で使用する環境変数の値を指定 
+    environment:   
+      MYSQL_ROOT_USER: ${MYSQL_ROOT_USER} # MySQLのルートユーザー名
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQLのルートユーザーのパスワード 
+      MYSQL_DATABASE: ${MYSQL_DATABASE} # MySQLに用意されている初期データベースの名前 
+      MYSQL_USER: ${MYSQL_USERNAME} # MySQLのユーザー名
+      MYSQL_PASSWORD: ${MYSQL_USERPASS} # MySQLのユーザーパスワード
+      TZ: 'Asia/Tokyo'
+
+    # コンテナの 3306 番ポートを、ローカルの 3306 番ポートにつなげる
+    ports:
+      - "3306:3306"
+
+    # コンテナ内にある MySQL に格納するデータを永続化させるために使用するボリュームを指定
+    volumes:
+      - ./data:/var/lib/mysql 
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5  
+  server:
+    image: golang:1.23.8
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./server:/app
+    working_dir: /app
+    command: go run server.go
+
+    environment:
+      - DATABASE=${DATABASE}
+      - USERNAME=${MYSQL_USERNAME}
+      - USERPASS=${MYSQL_USERPASS}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+
+        
