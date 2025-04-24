@@ -1,6 +1,12 @@
 package domain
 
+import "time"
+
+type UserID string
+
 type User struct {
-	ID   string
-	Name string
+	ID        UserID
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
