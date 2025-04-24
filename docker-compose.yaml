@@ -41,7 +41,7 @@ services:
     command: go run server.go
 
     environment:
-      - DATABASE=${DATABASE}
+      - DATABASE=${MYSQL_DATABASE}
       - USERNAME=${MYSQL_USERNAME}
       - USERPASS=${MYSQL_USERPASS}
     depends_on:
