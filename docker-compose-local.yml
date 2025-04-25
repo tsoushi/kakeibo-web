@@ -19,11 +19,9 @@ services:
       MYSQL_PASSWORD: ${MYSQL_USERPASS} # MySQLのユーザーパスワード
       TZ: 'Asia/Tokyo'
 
-    # コンテナの 3306 番ポートを、ローカルの 3306 番ポートにつなげる
     ports:
       - "3306:3306"
 
-    # コンテナ内にある MySQL に格納するデータを永続化させるために使用するボリュームを指定
     volumes:
       - ./data:/var/lib/mysql 
     healthcheck:
@@ -47,6 +45,3 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    
-
-        

@@ -1,8 +1,8 @@
-dev/run/server:
+local/up:
 	. ./.env
-	docker compose up -d
+	docker compose -f docker-compose-local.yml up -d
 
-dev/run/down:
-	docker compose down
+local/down:
+	docker compose -f docker-compose-local.yml down
 
-restart: dev/run/down dev/run/server
+local/restart: local/down local/up
