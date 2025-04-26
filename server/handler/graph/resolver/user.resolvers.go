@@ -7,7 +7,7 @@ package resolver
 import (
 	"context"
 	"kakeibo-web-server/domain"
-	"kakeibo-web-server/graph"
+	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
 )
 

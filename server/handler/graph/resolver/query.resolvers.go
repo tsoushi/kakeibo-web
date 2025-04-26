@@ -7,7 +7,7 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"kakeibo-web-server/graph"
+	"kakeibo-web-server/handler/graph"
 )
 
 // Void is the resolver for the void field.

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"kakeibo-web-server/graph"
-	"kakeibo-web-server/graph/resolver"
-	"kakeibo-web-server/middleware"
+	"kakeibo-web-server/handler/graph"
+	"kakeibo-web-server/handler/graph/resolver"
+	"kakeibo-web-server/handler/middleware"
 	"log"
 	"net/http"
 	"os"
