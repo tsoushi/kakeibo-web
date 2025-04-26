@@ -6,3 +6,6 @@ local/down:
 	docker compose -f docker-compose-local.yml down
 
 local/restart: local/down local/up
+
+server_gqlgen:
+	make -C ./server gen
