@@ -5,6 +5,8 @@ go 1.23.8
 require (
 	github.com/99designs/gqlgen v0.17.72
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/gocraft/dbr/v2 v2.7.7
+	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/vektah/gqlparser/v2 v2.5.25
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
