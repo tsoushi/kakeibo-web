@@ -26,6 +26,6 @@ CREATE TABLE IF NOT EXISTS record (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES user(id),
-    FOREIGN KEY (record_type_id) REFERENCES record_type(id)
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user(id), -- synbolを命名しないとmysqldefがエラーになる
+    CONSTRAINT fk_record_type FOREIGN KEY (record_type_id) REFERENCES record_type(id)
 );

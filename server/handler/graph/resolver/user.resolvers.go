@@ -9,19 +9,23 @@ import (
 	"kakeibo-web-server/domain"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
+
+	"golang.org/x/xerrors"
 )
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*domain.User, error) {
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return &domain.User{
-		ID:   userID,
-		Name: "Test User",
-	}, nil
+	user, err := r.usecase.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return user, nil
 }
 
 // ID is the resolver for the ID field.

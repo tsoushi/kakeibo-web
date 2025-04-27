@@ -4,6 +4,8 @@ import (
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/handler/graph/resolver"
 	"kakeibo-web-server/handler/middleware"
+	"kakeibo-web-server/repository"
+	"kakeibo-web-server/usecase"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +16,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/gocraft/dbr/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 const defaultPort = "8080"
@@ -26,11 +31,31 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-
 	r.Use(middleware.DebugAuth)
 
+	mysqlConfig := mysql.Config{
+		DBName:    os.Getenv("MYSQL_DATABASE"),
+		User:      os.Getenv("MYSQL_USERNAME"),
+		Passwd:    os.Getenv("MYSQL_USERPASS"),
+		Addr:      os.Getenv("MYSQL_HOST") + ":" + os.Getenv("MYSQL_PORT"),
+		Net:       "tcp",
+		ParseTime: true,
+	}
+
+	dbrConn, err := dbr.Open("mysql", mysqlConfig.FormatDSN(), nil)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+
+	dbrConn.SetMaxOpenConns(10)
+
+	sess := dbrConn.NewSession(nil)
+
+	repository := repository.NewRepository(sess)
+	usecase := usecase.NewUsecase(repository)
+
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
-		Resolvers: &resolver.Resolver{},
+		Resolvers: resolver.NewResolver(usecase),
 	}))
 
 	srv.AddTransport(transport.Options{})
