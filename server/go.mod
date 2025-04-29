@@ -7,7 +7,6 @@ require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/gocraft/dbr/v2 v2.7.7
-	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/vektah/gqlparser/v2 v2.5.25
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
