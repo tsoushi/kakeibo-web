@@ -30,9 +30,6 @@ func main() {
 		port = defaultPort
 	}
 
-	r := chi.NewRouter()
-	r.Use(middleware.DebugAuth)
-
 	mysqlConfig := mysql.Config{
 		DBName:    os.Getenv("MYSQL_DATABASE"),
 		User:      os.Getenv("MYSQL_USERNAME"),
@@ -54,6 +51,10 @@ func main() {
 	repository := repository.NewRepository(sess)
 	usecase := usecase.NewUsecase(repository)
 
+	r := chi.NewRouter()
+	graphQLRouter := chi.NewRouter()
+	graphQLRouter.Use(middleware.MakeDebugAuth(repository))
+
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
 		Resolvers: resolver.NewResolver(usecase),
 	}))
@@ -70,7 +71,8 @@ func main() {
 	})
 
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	r.Handle("/query", srv)
+	graphQLRouter.Handle("/query", srv)
+	r.Handle("/query", graphQLRouter)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))

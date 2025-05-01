@@ -35,12 +35,26 @@ func (r *UserRepository) GetByID(ctx context.Context, id domain.UserID) (*domain
 	return &user, nil
 }
 
-func (r *UserRepository) Insert(ctx context.Context, user *domain.User) error {
+func (r *UserRepository) GetByName(ctx context.Context, name string) (*domain.User, error) {
+	var user domain.User
+	runner := getRunner(ctx, r.sess)
+	err := runner.Select("*").From(usertableName).Where("name = ?", name).LoadOneContext(ctx, &user)
+	if err != nil {
+		if errors.Is(err, dbr.ErrNotFound) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, xerrors.Errorf("failed to get user by name: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) Insert(ctx context.Context, user *domain.User) (*domain.User, error) {
 	runner := getRunner(ctx, r.sess)
 	_, err := runner.InsertInto(usertableName).Columns("id", "name", "hashed_password").Record(user).Exec()
 	if err != nil {
-		return xerrors.Errorf("failed to insert user: %w", err)
+		return nil, xerrors.Errorf("failed to insert user: %w", err)
 	}
 
-	return nil
+	return user, nil
 }
