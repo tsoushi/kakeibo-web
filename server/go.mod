@@ -9,6 +9,7 @@ require (
 	github.com/gocraft/dbr/v2 v2.7.7
 	github.com/google/uuid v1.6.0
 	github.com/vektah/gqlparser/v2 v2.5.25
+	golang.org/x/crypto v0.37.0
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da
 )
 
@@ -23,7 +24,6 @@ require (
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/urfave/cli/v2 v2.27.6 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
