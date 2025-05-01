@@ -42,7 +42,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE} # MySQLに用意されている初期データベースの名前 
       MYSQL_USERNAME: ${MYSQL_USERNAME} # MySQLのユーザー名
       MYSQL_USERPASS: ${MYSQL_USERPASS} # MySQLのユーザーパスワード
-      MYSQL_HOST: ${MYSQL_HOST} # MySQLのホスト名
+      MYSQL_HOST: mysql # MySQLのホスト名
       MYSQL_PORT: ${MYSQL_PORT} # MySQLのポート番号
     depends_on:
       mysql:

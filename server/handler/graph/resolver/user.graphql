@@ -4,5 +4,14 @@ type User {
 }
 
 extend type Query {
-    user: User
+    user: User!
+}
+
+extend type Mutation {
+    createUser(input: createUserInput!): User!
+}
+
+input createUserInput {
+    name: String!
+    password: String!
 }
