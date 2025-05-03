@@ -28,7 +28,7 @@ func (r *mutationResolver) CreateBank(ctx context.Context, input domain.CreateBa
 
 	bank, err := r.usecase.CreateBank(ctx, userID, input.Name)
 	if err != nil {
-		return nil, fmt.Errorf("bank resolver: %w", err)
+		return nil, fmt.Errorf(": %w", err)
 	}
 
 	return bank, nil
