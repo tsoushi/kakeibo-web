@@ -11,12 +11,14 @@ type TxKey struct{}
 type Repository struct {
 	sess *dbr.Session
 	User *UserRepository
+	Bank *BankRepository
 }
 
 func NewRepository(sess *dbr.Session) *Repository {
 	return &Repository{
 		sess: sess,
 		User: NewUserRepository(sess),
+		Bank: NewBankRepository(sess),
 	}
 }
 
