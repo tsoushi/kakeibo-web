@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"kakeibo-web-server/domain"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
@@ -28,7 +27,7 @@ func (r *mutationResolver) CreateBank(ctx context.Context, input domain.CreateBa
 
 	bank, err := r.usecase.CreateBank(ctx, userID, input.Name)
 	if err != nil {
-		return nil, fmt.Errorf(": %w", err)
+		return nil, xerrors.Errorf(": %w", err)
 	}
 
 	return bank, nil
