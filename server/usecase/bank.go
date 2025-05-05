@@ -15,3 +15,12 @@ func (u *Usecase) CreateBank(ctx context.Context, userID domain.UserID, name str
 
 	return bank, nil
 }
+
+func (u *Usecase) GetBanksByUserID(ctx context.Context, userID domain.UserID) ([]*domain.Bank, error) {
+	banks, err := u.repo.Bank.List(ctx, userID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return banks, nil
+}
