@@ -29,3 +29,13 @@ CREATE TABLE IF NOT EXISTS record (
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user(id), -- synbolを命名しないとmysqldefがエラーになる
     CONSTRAINT fk_record_type FOREIGN KEY (record_type_id) REFERENCES record_type(id)
 );
+
+CREATE TABLE IF NOT EXISTS bank (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_bank_user FOREIGN KEY (user_id) REFERENCES user(id)
+);

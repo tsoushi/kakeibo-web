@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Bank() BankResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	User() UserResolver
@@ -48,7 +49,13 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Bank struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
 	Mutation struct {
+		CreateBank func(childComplexity int, input domain.CreateBankInput) int
 		CreateUser func(childComplexity int, input domain.CreateUserInput) int
 		Noop       func(childComplexity int) int
 	}
@@ -64,8 +71,12 @@ type ComplexityRoot struct {
 	}
 }
 
+type BankResolver interface {
+	ID(ctx context.Context, obj *domain.Bank) (string, error)
+}
 type MutationResolver interface {
 	Noop(ctx context.Context) (*bool, error)
+	CreateBank(ctx context.Context, input domain.CreateBankInput) (*domain.Bank, error)
 	CreateUser(ctx context.Context, input domain.CreateUserInput) (*domain.User, error)
 }
 type QueryResolver interface {
@@ -94,6 +105,32 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Bank.id":
+		if e.complexity.Bank.ID == nil {
+			break
+		}
+
+		return e.complexity.Bank.ID(childComplexity), true
+
+	case "Bank.name":
+		if e.complexity.Bank.Name == nil {
+			break
+		}
+
+		return e.complexity.Bank.Name(childComplexity), true
+
+	case "Mutation.createBank":
+		if e.complexity.Mutation.CreateBank == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBank_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateBank(childComplexity, args["input"].(domain.CreateBankInput)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -150,6 +187,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputcreateBankInput,
 		ec.unmarshalInputcreateUserInput,
 	)
 	first := true
@@ -247,7 +285,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "resolver/mutation.graphql" "resolver/query.graphql" "resolver/user.graphql"
+//go:embed "resolver/bank.graphql" "resolver/mutation.graphql" "resolver/query.graphql" "resolver/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -259,6 +297,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "resolver/bank.graphql", Input: sourceData("resolver/bank.graphql"), BuiltIn: false},
 	{Name: "resolver/mutation.graphql", Input: sourceData("resolver/mutation.graphql"), BuiltIn: false},
 	{Name: "resolver/query.graphql", Input: sourceData("resolver/query.graphql"), BuiltIn: false},
 	{Name: "resolver/user.graphql", Input: sourceData("resolver/user.graphql"), BuiltIn: false},
@@ -268,6 +307,29 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createBank_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createBank_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createBank_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.CreateBankInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNcreateBankInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateBankInput(ctx, tmp)
+	}
+
+	var zeroVal domain.CreateBankInput
+	return zeroVal, nil
+}
 
 func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -415,6 +477,94 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Bank_id(ctx context.Context, field graphql.CollectedField, obj *domain.Bank) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Bank_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bank().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Bank_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Bank",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Bank_name(ctx context.Context, field graphql.CollectedField, obj *domain.Bank) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Bank_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Bank_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Bank",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_noop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_noop(ctx, field)
 	if err != nil {
@@ -452,6 +602,67 @@ func (ec *executionContext) fieldContext_Mutation_noop(_ context.Context, field 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createBank(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createBank(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateBank(rctx, fc.Args["input"].(domain.CreateBankInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Bank)
+	fc.Result = res
+	return ec.marshalNBank2ᚖkakeiboᚑwebᚑserverᚋdomainᚐBank(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createBank(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Bank_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Bank_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Bank", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createBank_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2778,6 +2989,33 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputcreateBankInput(ctx context.Context, obj any) (domain.CreateBankInput, error) {
+	var it domain.CreateBankInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputcreateUserInput(ctx context.Context, obj any) (domain.CreateUserInput, error) {
 	var it domain.CreateUserInput
 	asMap := map[string]any{}
@@ -2820,6 +3058,81 @@ func (ec *executionContext) unmarshalInputcreateUserInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var bankImplementors = []string{"Bank"}
+
+func (ec *executionContext) _Bank(ctx context.Context, sel ast.SelectionSet, obj *domain.Bank) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bankImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Bank")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bank_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "name":
+			out.Values[i] = ec._Bank_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2843,6 +3156,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_noop(ctx, field)
 			})
+		case "createBank":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBank(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createUser":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createUser(ctx, field)
@@ -3374,6 +3694,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNBank2kakeiboᚑwebᚑserverᚋdomainᚐBank(ctx context.Context, sel ast.SelectionSet, v domain.Bank) graphql.Marshaler {
+	return ec._Bank(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBank2ᚖkakeiboᚑwebᚑserverᚋdomainᚐBank(ctx context.Context, sel ast.SelectionSet, v *domain.Bank) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Bank(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3682,6 +4016,11 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNcreateBankInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateBankInput(ctx context.Context, v any) (domain.CreateBankInput, error) {
+	res, err := ec.unmarshalInputcreateBankInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNcreateUserInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateUserInput(ctx context.Context, v any) (domain.CreateUserInput, error) {

@@ -1,0 +1,12 @@
+type Bank{
+    id: ID!
+    name: String!
+}
+
+extend type Mutation {
+    createBank(input: createBankInput!): Bank!
+}
+
+input createBankInput {
+    name: String!
+}
