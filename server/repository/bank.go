@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"kakeibo-web-server/domain"
 
 	"github.com/gocraft/dbr/v2"
@@ -28,4 +29,18 @@ func (r *BankRepository) Insert(ctx context.Context, bank *domain.Bank) (*domain
 	}
 
 	return bank, nil
+}
+
+func (r *BankRepository) List(ctx context.Context, userID domain.UserID) ([]*domain.Bank, error) {
+	runner := getRunner(ctx, r.sess)
+	banks := make([]*domain.Bank, 0)
+	_, err := runner.Select("*").From(banktableName).Where("user_id = ?", userID).LoadContext(ctx, &banks)
+	if err != nil {
+		if errors.Is(err, dbr.ErrNotFound) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, xerrors.Errorf("failed to list banks by userID: %w", err)
+	}
+
+	return banks, nil
 }

@@ -33,6 +33,21 @@ func (r *mutationResolver) CreateBank(ctx context.Context, input domain.CreateBa
 	return bank, nil
 }
 
+// Banks is the resolver for the banks field.
+func (r *queryResolver) Banks(ctx context.Context) ([]*domain.Bank, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	banks, err := r.usecase.GetBanksByUserID(ctx, userID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return banks, nil
+}
+
 // Bank returns graph.BankResolver implementation.
 func (r *Resolver) Bank() graph.BankResolver { return &bankResolver{r} }
 

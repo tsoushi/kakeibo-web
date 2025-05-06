@@ -3,6 +3,10 @@ type Bank{
     name: String!
 }
 
+extend type Query {
+    banks: [Bank!]!
+}
+
 extend type Mutation {
     createBank(input: createBankInput!): Bank!
 }
