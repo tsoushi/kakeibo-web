@@ -20,3 +20,4 @@ install_tools/mac:
 
 local/create_table:
 	mysqldef -u ${MYSQL_ROOT_USER} -p ${MYSQL_ROOT_PASSWORD} -h localhost -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/schema.sql
+	mysql -u ${MYSQL_ROOT_USER} -p${MYSQL_ROOT_PASSWORD} -h 127.0.0.1 -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/seed.sql
