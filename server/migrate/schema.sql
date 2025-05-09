@@ -9,25 +9,23 @@ CREATE TABLE IF NOT EXISTS user (
 );
 
 CREATE TABLE IF NOT EXISTS record_type (
-    id INT,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(32) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE (name)
+    PRIMARY KEY (name)
 );
 
 CREATE TABLE IF NOT EXISTS record (
     id VARCHAR(255),
     user_id VARCHAR(255) NOT NULL,
-    record_type_id INT NOT NULL,
+    record_type VARCHAR(32) NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user(id), -- synbolを命名しないとmysqldefがエラーになる
-    CONSTRAINT fk_record_type FOREIGN KEY (record_type_id) REFERENCES record_type(id)
+    CONSTRAINT fk_record_type FOREIGN KEY (record_type) REFERENCES record_type(name)
 );
 
 CREATE TABLE IF NOT EXISTS asset (
