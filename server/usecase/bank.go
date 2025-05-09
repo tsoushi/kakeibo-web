@@ -7,20 +7,20 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (u *Usecase) CreateBank(ctx context.Context, userID domain.UserID, name string) (*domain.Bank, error) {
-	bank, err := u.repo.Bank.Insert(ctx, domain.NewBank(userID, name))
+func (u *Usecase) CreateAsset(ctx context.Context, userID domain.UserID, name string) (*domain.Asset, error) {
+	asset, err := u.repo.Asset.Insert(ctx, domain.NewAsset(userID, name))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return bank, nil
+	return asset, nil
 }
 
-func (u *Usecase) GetBanksByUserID(ctx context.Context, userID domain.UserID) ([]*domain.Bank, error) {
-	banks, err := u.repo.Bank.List(ctx, userID)
+func (u *Usecase) GetAssetsByUserID(ctx context.Context, userID domain.UserID) ([]*domain.Asset, error) {
+	assets, err := u.repo.Asset.List(ctx, userID)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return banks, nil
+	return assets, nil
 }

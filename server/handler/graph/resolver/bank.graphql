@@ -1,16 +1,16 @@
-type Bank{
+type Asset{
     id: ID!
     name: String!
 }
 
 extend type Query {
-    banks: [Bank!]!
+    assets: [Asset!]!
 }
 
 extend type Mutation {
-    createBank(input: createBankInput!): Bank!
+    createAsset(input: createAssetInput!): Asset!
 }
 
-input createBankInput {
+input createAssetInput {
     name: String!
 }
