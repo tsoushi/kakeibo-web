@@ -14,41 +14,41 @@ import (
 )
 
 // ID is the resolver for the id field.
-func (r *bankResolver) ID(ctx context.Context, obj *domain.Bank) (string, error) {
+func (r *assetResolver) ID(ctx context.Context, obj *domain.Asset) (string, error) {
 	return string(obj.ID), nil
 }
 
-// CreateBank is the resolver for the createBank field.
-func (r *mutationResolver) CreateBank(ctx context.Context, input domain.CreateBankInput) (*domain.Bank, error) {
+// CreateAsset is the resolver for the createAsset field.
+func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateAssetInput) (*domain.Asset, error) {
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	bank, err := r.usecase.CreateBank(ctx, userID, input.Name)
+	asset, err := r.usecase.CreateAsset(ctx, userID, input.Name)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return bank, nil
+	return asset, nil
 }
 
-// Banks is the resolver for the banks field.
-func (r *queryResolver) Banks(ctx context.Context) ([]*domain.Bank, error) {
+// Assets is the resolver for the assets field.
+func (r *queryResolver) Assets(ctx context.Context) ([]*domain.Asset, error) {
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	banks, err := r.usecase.GetBanksByUserID(ctx, userID)
+	assets, err := r.usecase.GetAssetsByUserID(ctx, userID)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return banks, nil
+	return assets, nil
 }
 
-// Bank returns graph.BankResolver implementation.
-func (r *Resolver) Bank() graph.BankResolver { return &bankResolver{r} }
+// Asset returns graph.AssetResolver implementation.
+func (r *Resolver) Asset() graph.AssetResolver { return &assetResolver{r} }
 
-type bankResolver struct{ *Resolver }
+type assetResolver struct{ *Resolver }
