@@ -19,5 +19,5 @@ install_tools/mac:
 	brew install sqldef/sqldef/mysqldef
 
 local/create_table:
-	mysqldef -u ${MYSQL_ROOT_USER} -p ${MYSQL_ROOT_PASSWORD} -h localhost -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/schema.sql
-	mysql -u ${MYSQL_ROOT_USER} -p${MYSQL_ROOT_PASSWORD} -h 127.0.0.1 -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/seed.sql
+	mysqldef -u ${MYSQL_ROOT_USER} -p ${MYSQL_ROOT_PASSWORD} -h localhost -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/migrate/schema.sql
+	mysql -u ${MYSQL_ROOT_USER} -p${MYSQL_ROOT_PASSWORD} -h 127.0.0.1 -P ${MYSQL_PORT} ${MYSQL_DATABASE} < ./server/migrate/seed.sql
