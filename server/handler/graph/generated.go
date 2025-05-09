@@ -294,7 +294,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "resolver/bank.graphql" "resolver/mutation.graphql" "resolver/query.graphql" "resolver/user.graphql"
+//go:embed "resolver/asset.graphql" "resolver/mutation.graphql" "resolver/query.graphql" "resolver/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -306,7 +306,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
-	{Name: "resolver/bank.graphql", Input: sourceData("resolver/bank.graphql"), BuiltIn: false},
+	{Name: "resolver/asset.graphql", Input: sourceData("resolver/asset.graphql"), BuiltIn: false},
 	{Name: "resolver/mutation.graphql", Input: sourceData("resolver/mutation.graphql"), BuiltIn: false},
 	{Name: "resolver/query.graphql", Input: sourceData("resolver/query.graphql"), BuiltIn: false},
 	{Name: "resolver/user.graphql", Input: sourceData("resolver/user.graphql"), BuiltIn: false},
