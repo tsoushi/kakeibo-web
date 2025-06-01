@@ -10,16 +10,18 @@ import (
 type TxKey struct{}
 
 type Repository struct {
-	sess  *dbr.Session
-	User  *UserRepository
-	Asset *AssetRepository
+	sess          *dbr.Session
+	User          *UserRepository
+	Asset         *AssetRepository
+	AssetCategory *AssetCategoryRepository
 }
 
 func NewRepository(sess *dbr.Session) *Repository {
 	return &Repository{
-		sess:  sess,
-		User:  NewUserRepository(sess),
-		Asset: NewAssetRepository(sess),
+		sess:          sess,
+		User:          NewUserRepository(sess),
+		Asset:         NewAssetRepository(sess),
+		AssetCategory: NewAssetCategoryRepository(sess),
 	}
 }
 

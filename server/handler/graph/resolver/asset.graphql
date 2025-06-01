@@ -1,6 +1,7 @@
 type Asset{
     id: ID!
     name: String!
+    category: AssetCategory
 }
 
 type AssetConnection {
@@ -9,11 +10,12 @@ type AssetConnection {
 }
 
 enum AssetSortKey {
+    NAME
     CREATED_AT
 }
 
 extend type Query {
-    assets(sortKey: AssetSortKey! = CREATED_AT, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetConnection!
+    assets(categoryID: ID, sortKey: AssetSortKey! = NAME, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetConnection!
 }
 
 extend type Mutation {
@@ -22,4 +24,5 @@ extend type Mutation {
 
 input createAssetInput {
     name: String!
+    categoryId: ID
 }

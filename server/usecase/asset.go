@@ -7,8 +7,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func (u *Usecase) CreateAsset(ctx context.Context, userID domain.UserID, name string) (*domain.Asset, error) {
-	asset, err := u.repo.Asset.Insert(ctx, domain.NewAsset(userID, name))
+func (u *Usecase) CreateAsset(ctx context.Context, userID domain.UserID, name string, categoryID *domain.AssetCategoryID) (*domain.Asset, error) {
+	asset, err := u.repo.Asset.Insert(ctx, domain.NewAsset(userID, name, categoryID))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -16,8 +16,8 @@ func (u *Usecase) CreateAsset(ctx context.Context, userID domain.UserID, name st
 	return asset, nil
 }
 
-func (u *Usecase) GetAssetsByUserID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID) ([]*domain.Asset, *domain.PageInfo, error) {
-	assets, pageInfo, err := u.repo.Asset.GetMultiByUserID(ctx, pageParam, userID)
+func (u *Usecase) GetAssetsByUserIDAndCategoryID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID, categoryID *domain.AssetCategoryID) ([]*domain.Asset, *domain.PageInfo, error) {
+	assets, pageInfo, err := u.repo.Asset.GetMultiByUserIDAndCategoryID(ctx, pageParam, userID, categoryID)
 	if err != nil {
 		return nil, nil, xerrors.Errorf(": %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"kakeibo-web-server/domain"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
+	"kakeibo-web-server/lib/typeutil"
 
 	"golang.org/x/xerrors"
 )
@@ -18,6 +19,25 @@ func (r *assetResolver) ID(ctx context.Context, obj *domain.Asset) (string, erro
 	return string(obj.ID), nil
 }
 
+// Category is the resolver for the category field.
+func (r *assetResolver) Category(ctx context.Context, obj *domain.Asset) (*domain.AssetCategory, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get user ID from context: %w", err)
+	}
+
+	if obj.CategoryID == nil {
+		return nil, nil
+	}
+
+	category, err := r.usecase.GetAssetCategoryByID(ctx, userID, *obj.CategoryID)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get asset category by ID: %w", err)
+	}
+
+	return category, nil
+}
+
 // CreateAsset is the resolver for the createAsset field.
 func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateAssetInput) (*domain.Asset, error) {
 	userID, err := ctxdef.UserID(ctx)
@@ -25,7 +45,12 @@ func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateA
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	asset, err := r.usecase.CreateAsset(ctx, userID, input.Name)
+	var categoryID *domain.AssetCategoryID
+	if input.CategoryID != nil {
+		categoryID = typeutil.Ptr(domain.AssetCategoryID(*input.CategoryID))
+	}
+
+	asset, err := r.usecase.CreateAsset(ctx, userID, input.Name, categoryID)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -34,7 +59,7 @@ func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateA
 }
 
 // Assets is the resolver for the assets field.
-func (r *queryResolver) Assets(ctx context.Context, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
+func (r *queryResolver) Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
 	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
@@ -45,7 +70,12 @@ func (r *queryResolver) Assets(ctx context.Context, sortKey domain.AssetSortKey,
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	assets, pageInfo, err := r.usecase.GetAssetsByUserID(ctx, pageParam, userID)
+	var categoryIDPtr *domain.AssetCategoryID
+	if categoryID != nil {
+		categoryIDPtr = typeutil.Ptr(domain.AssetCategoryID(*categoryID))
+	}
+
+	assets, pageInfo, err := r.usecase.GetAssetsByUserIDAndCategoryID(ctx, pageParam, userID, categoryIDPtr)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}

@@ -1,0 +1,26 @@
+type AssetCategory {
+    id: ID!
+    name: String!
+}
+
+type AssetCategoryConnection {
+    nodes: [AssetCategory!]!
+    pageInfo: PageInfo!
+}
+
+enum AssetCategorySortKey {
+    NAME
+    CREATED_AT
+}
+
+extend type Query {
+    assetCategories(sortKey: AssetCategorySortKey! = NAME, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetCategoryConnection!
+}
+
+extend type Mutation {
+    createAssetCategory(input: createAssetCategoryInput!): AssetCategory!
+}
+
+input createAssetCategoryInput {
+    name: String!
+}
