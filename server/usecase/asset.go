@@ -16,11 +16,11 @@ func (u *Usecase) CreateAsset(ctx context.Context, userID domain.UserID, name st
 	return asset, nil
 }
 
-func (u *Usecase) GetAssetsByUserID(ctx context.Context, userID domain.UserID) ([]*domain.Asset, error) {
-	assets, err := u.repo.Asset.List(ctx, userID)
+func (u *Usecase) GetAssetsByUserID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID) ([]*domain.Asset, *domain.PageInfo, error) {
+	assets, pageInfo, err := u.repo.Asset.GetMultiByUserID(ctx, pageParam, userID)
 	if err != nil {
-		return nil, xerrors.Errorf(": %w", err)
+		return nil, nil, xerrors.Errorf(": %w", err)
 	}
 
-	return assets, nil
+	return assets, pageInfo, nil
 }

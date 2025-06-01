@@ -34,18 +34,26 @@ func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateA
 }
 
 // Assets is the resolver for the assets field.
-func (r *queryResolver) Assets(ctx context.Context) ([]*domain.Asset, error) {
+func (r *queryResolver) Assets(ctx context.Context, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	assets, err := r.usecase.GetAssetsByUserID(ctx, userID)
+	assets, pageInfo, err := r.usecase.GetAssetsByUserID(ctx, pageParam, userID)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return assets, nil
+	return &domain.AssetConnection{
+		Nodes:    assets,
+		PageInfo: pageInfo,
+	}, nil
 }
 
 // Asset returns graph.AssetResolver implementation.

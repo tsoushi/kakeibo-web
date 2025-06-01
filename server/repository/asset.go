@@ -44,3 +44,42 @@ func (r *AssetRepository) List(ctx context.Context, userID domain.UserID) ([]*do
 
 	return assets, nil
 }
+
+func (r *AssetRepository) GetMultiByUserID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID) ([]*domain.Asset, *domain.PageInfo, error) {
+	runner := getRunner(ctx, r.sess)
+	assets := make([]*domain.Asset, 0)
+
+	stmt := runner.Select("*").From(assettableName).Where("user_id = ?", userID)
+
+	stmt, err := paginate(pageParam, stmt)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to paginate: %w", err)
+	}
+
+	_, err = stmt.LoadContext(ctx, &assets)
+	if err != nil {
+		return nil, nil, xerrors.Errorf("failed to get assets by userID: %w", err)
+	}
+
+	var startCursor *domain.PageCursor
+	var endCursor *domain.PageCursor
+	if len(assets) > 0 {
+		if pageParam.SortKey == domain.AssetSortKeyCreatedAt.String() {
+			startCursor = domain.NewPageCursor(string(assets[0].ID), assets[0].CreatedAt.Format("2006-01-02 15:04:05"))
+			endCursor = domain.NewPageCursor(string(assets[len(assets)-1].ID), assets[len(assets)-1].CreatedAt.Format("2006-01-02 15:04:05"))
+		} else {
+			panic("unsupported sort key for asset repository")
+		}
+	}
+
+	hasNextPage, hasPreviousPage := hasPage(pageParam, len(assets))
+
+	pageInfo := &domain.PageInfo{
+		StartCursor:     startCursor,
+		EndCursor:       endCursor,
+		HasNextPage:     hasNextPage,
+		HasPreviousPage: hasPreviousPage,
+	}
+
+	return assets, pageInfo, nil
+}
