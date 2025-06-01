@@ -3,6 +3,19 @@ type Tag {
     name: String!
 }
 
+type TagConnection {
+    nodes: [Tag!]!
+    pageInfo: PageInfo!
+}
+
+enum TagSortKey {
+    NAME
+}
+
+extend type Query {
+    tags(sortKey: TagSortKey! = NAME, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): TagConnection!
+}
+
 extend type Mutation {
     createTag(input: createTagInput!): Tag!
 }

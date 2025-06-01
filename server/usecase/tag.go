@@ -15,3 +15,12 @@ func (u *Usecase) CreateTag(ctx context.Context, userID domain.UserID, name stri
 
 	return createdTag, nil
 }
+
+func (u *Usecase) GetTagsByUserID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID) ([]*domain.Tag, *domain.PageInfo, error) {
+	tags, pageInfo, err := u.repo.Tag.GetMultiByUserID(ctx, pageParam, userID)
+	if err != nil {
+		return nil, nil, xerrors.Errorf(": %w", err)
+	}
+
+	return tags, pageInfo, nil
+}

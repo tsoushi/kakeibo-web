@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"kakeibo-web-server/domain"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
@@ -29,9 +28,32 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input domain.CreateTag
 	return tag, nil
 }
 
+// Tags is the resolver for the tags field.
+func (r *queryResolver) Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	tags, pageInfo, err := r.usecase.GetTagsByUserID(ctx, pageParam, userID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return &domain.TagConnection{
+		Nodes:    tags,
+		PageInfo: pageInfo,
+	}, nil
+}
+
 // ID is the resolver for the id field.
 func (r *tagResolver) ID(ctx context.Context, obj *domain.Tag) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return string(obj.ID), nil
 }
 
 // Tag returns graph.TagResolver implementation.

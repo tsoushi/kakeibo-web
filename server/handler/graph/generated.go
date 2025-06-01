@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Assets func(childComplexity int, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Tags   func(childComplexity int, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
 		User   func(childComplexity int) int
 		Void   func(childComplexity int) int
 	}
@@ -83,6 +84,11 @@ type ComplexityRoot struct {
 	Tag struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	TagConnection struct {
+		Nodes    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	User struct {
@@ -103,6 +109,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Void(ctx context.Context) (*string, error)
 	Assets(ctx context.Context, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
+	Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error)
 	User(ctx context.Context) (*domain.User, error)
 }
 type TagResolver interface {
@@ -242,6 +249,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Assets(childComplexity, args["sortKey"].(domain.AssetSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
+	case "Query.tags":
+		if e.complexity.Query.Tags == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tags_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Tags(childComplexity, args["sortKey"].(domain.TagSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -269,6 +288,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Tag.Name(childComplexity), true
+
+	case "TagConnection.nodes":
+		if e.complexity.TagConnection.Nodes == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.Nodes(childComplexity), true
+
+	case "TagConnection.pageInfo":
+		if e.complexity.TagConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TagConnection.PageInfo(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -610,6 +643,119 @@ func (ec *executionContext) field_Query_assets_argsLast(
 }
 
 func (ec *executionContext) field_Query_assets_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_tags_argsSortKey(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sortKey"] = arg0
+	arg1, err := ec.field_Query_tags_argsReverse(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["reverse"] = arg1
+	arg2, err := ec.field_Query_tags_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg2
+	arg3, err := ec.field_Query_tags_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg3
+	arg4, err := ec.field_Query_tags_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg4
+	arg5, err := ec.field_Query_tags_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg5
+	return args, nil
+}
+func (ec *executionContext) field_Query_tags_argsSortKey(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.TagSortKey, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sortKey"))
+	if tmp, ok := rawArgs["sortKey"]; ok {
+		return ec.unmarshalNTagSortKey2kakeiboᚑwebᚑserverᚋdomainᚐTagSortKey(ctx, tmp)
+	}
+
+	var zeroVal domain.TagSortKey
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsReverse(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
+	if tmp, ok := rawArgs["reverse"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_tags_argsBefore(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*domain.PageCursor, error) {
@@ -1410,6 +1556,67 @@ func (ec *executionContext) fieldContext_Query_assets(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Tags(rctx, fc.Args["sortKey"].(domain.TagSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.TagConnection)
+	fc.Result = res
+	return ec.marshalNTagConnection2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTagConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tags(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodes":
+				return ec.fieldContext_TagConnection_nodes(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TagConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TagConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tags_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_user(ctx, field)
 	if err != nil {
@@ -1674,6 +1881,110 @@ func (ec *executionContext) fieldContext_Tag_name(_ context.Context, field graph
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TagConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *domain.TagConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TagConnection_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.Tag)
+	fc.Result = res
+	return ec.marshalNTag2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐTagᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TagConnection_nodes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TagConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TagConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *domain.TagConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TagConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TagConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TagConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -4108,6 +4419,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "tags":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tags(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "user":
 			field := field
 
@@ -4212,6 +4545,50 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			out.Values[i] = ec._Tag_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var tagConnectionImplementors = []string{"TagConnection"}
+
+func (ec *executionContext) _TagConnection(ctx context.Context, sel ast.SelectionSet, obj *domain.TagConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tagConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TagConnection")
+		case "nodes":
+			out.Values[i] = ec._TagConnection_nodes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._TagConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -4787,6 +5164,50 @@ func (ec *executionContext) marshalNTag2kakeiboᚑwebᚑserverᚋdomainᚐTag(ct
 	return ec._Tag(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNTag2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐTagᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.Tag) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTag2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTag(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNTag2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTag(ctx context.Context, sel ast.SelectionSet, v *domain.Tag) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -4795,6 +5216,30 @@ func (ec *executionContext) marshalNTag2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTag
 		return graphql.Null
 	}
 	return ec._Tag(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTagConnection2kakeiboᚑwebᚑserverᚋdomainᚐTagConnection(ctx context.Context, sel ast.SelectionSet, v domain.TagConnection) graphql.Marshaler {
+	return ec._TagConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTagConnection2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTagConnection(ctx context.Context, sel ast.SelectionSet, v *domain.TagConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TagConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTagSortKey2kakeiboᚑwebᚑserverᚋdomainᚐTagSortKey(ctx context.Context, v any) (domain.TagSortKey, error) {
+	var res domain.TagSortKey
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTagSortKey2kakeiboᚑwebᚑserverᚋdomainᚐTagSortKey(ctx context.Context, sel ast.SelectionSet, v domain.TagSortKey) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNUser2kakeiboᚑwebᚑserverᚋdomainᚐUser(ctx context.Context, sel ast.SelectionSet, v domain.User) graphql.Marshaler {
