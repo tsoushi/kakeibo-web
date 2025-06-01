@@ -1,0 +1,12 @@
+type Tag {
+    id: ID!
+    name: String!
+}
+
+extend type Mutation {
+    createTag(input: createTagInput!): Tag!
+}
+
+input createTagInput {
+    name: String!
+}
