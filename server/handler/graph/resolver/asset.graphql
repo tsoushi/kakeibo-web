@@ -3,8 +3,17 @@ type Asset{
     name: String!
 }
 
+type AssetConnection {
+    nodes: [Asset!]!
+    pageInfo: PageInfo!
+}
+
+enum AssetSortKey {
+    CREATED_AT
+}
+
 extend type Query {
-    assets: [Asset!]!
+    assets(sortKey: AssetSortKey! = CREATED_AT, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetConnection!
 }
 
 extend type Mutation {

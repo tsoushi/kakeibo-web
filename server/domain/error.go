@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	ErrEntityNotFound = xerrors.New("entity not found")
+	ErrEntityNotFound   = xerrors.New("entity not found")
+	ErrInvalidPageParam = xerrors.New("page param invalid")
 )
