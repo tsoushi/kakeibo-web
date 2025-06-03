@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS record_tag (
     tag_id VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE (record_id, tag_id),
+    PRIMARY KEY (record_id, tag_id),
     CONSTRAINT fk_record FOREIGN KEY (record_id) REFERENCES record(id),
     CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id)
 );
