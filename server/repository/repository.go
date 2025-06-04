@@ -14,6 +14,7 @@ type Repository struct {
 	User          *UserRepository
 	Asset         *AssetRepository
 	AssetCategory *AssetCategoryRepository
+	Tag           *TagRepository
 }
 
 func NewRepository(sess *dbr.Session) *Repository {
@@ -22,6 +23,7 @@ func NewRepository(sess *dbr.Session) *Repository {
 		User:          NewUserRepository(sess),
 		Asset:         NewAssetRepository(sess),
 		AssetCategory: NewAssetCategoryRepository(sess),
+		Tag:           NewTagRepository(sess),
 	}
 }
 

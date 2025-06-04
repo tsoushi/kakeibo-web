@@ -28,6 +28,27 @@ CREATE TABLE IF NOT EXISTS record (
     CONSTRAINT fk_record_type FOREIGN KEY (record_type) REFERENCES record_type(name)
 );
 
+CREATE TABLE IF NOT EXISTS tag (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE (user_id, name),
+    CONSTRAINT fk_tag_user FOREIGN KEY (user_id) REFERENCES user(id)
+);
+
+CREATE TABLE IF NOT EXISTS record_tag (
+    record_id VARCHAR(255) NOT NULL,
+    tag_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (record_id, tag_id),
+    CONSTRAINT fk_record FOREIGN KEY (record_id) REFERENCES record(id),
+    CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id)
+);
+
 CREATE TABLE IF NOT EXISTS asset_category (
     id VARCHAR(255),
     user_id VARCHAR(255) NOT NULL,
