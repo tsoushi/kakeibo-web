@@ -49,12 +49,24 @@ CREATE TABLE IF NOT EXISTS record_tag (
     CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id)
 );
 
-CREATE TABLE IF NOT EXISTS asset (
+CREATE TABLE IF NOT EXISTS asset_category (
     id VARCHAR(255),
     user_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    CONSTRAINT fk_asset_user FOREIGN KEY (user_id) REFERENCES user(id)
+    CONSTRAINT fk_asset_category_user FOREIGN KEY (user_id) REFERENCES user(id)
+);
+
+CREATE TABLE IF NOT EXISTS asset (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_asset_user FOREIGN KEY (user_id) REFERENCES user(id),
+    CONSTRAINT fk_asset_category FOREIGN KEY (category_id) REFERENCES asset_category(id) ON DELETE SET NULL
 );

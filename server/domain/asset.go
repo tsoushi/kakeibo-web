@@ -13,19 +13,21 @@ func NewAssetID() AssetID {
 }
 
 type Asset struct {
-	ID        AssetID
-	UserID    UserID
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         AssetID
+	UserID     UserID
+	Name       string
+	CategoryID *AssetCategoryID
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
-func NewAsset(userID UserID, name string) *Asset {
+func NewAsset(userID UserID, name string, categoryID *AssetCategoryID) *Asset {
 	return &Asset{
-		ID:        NewAssetID(),
-		UserID:    userID,
-		Name:      name,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:         NewAssetID(),
+		UserID:     userID,
+		Name:       name,
+		CategoryID: categoryID,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 }

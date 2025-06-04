@@ -40,6 +40,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Asset() AssetResolver
+	AssetCategory() AssetCategoryResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Tag() TagResolver
@@ -51,8 +52,19 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Asset struct {
+		Category func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+	}
+
+	AssetCategory struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	AssetCategoryConnection struct {
+		Nodes    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	AssetConnection struct {
@@ -61,10 +73,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAsset func(childComplexity int, input domain.CreateAssetInput) int
-		CreateTag   func(childComplexity int, input domain.CreateTagInput) int
-		CreateUser  func(childComplexity int, input domain.CreateUserInput) int
-		Noop        func(childComplexity int) int
+		CreateAsset         func(childComplexity int, input domain.CreateAssetInput) int
+		CreateAssetCategory func(childComplexity int, input domain.CreateAssetCategoryInput) int
+		CreateTag           func(childComplexity int, input domain.CreateTagInput) int
+		CreateUser          func(childComplexity int, input domain.CreateUserInput) int
+		Noop                func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -75,10 +88,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Assets func(childComplexity int, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
-		Tags   func(childComplexity int, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
-		User   func(childComplexity int) int
-		Void   func(childComplexity int) int
+		AssetCategories func(childComplexity int, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Assets          func(childComplexity int, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Tags            func(childComplexity int, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		User            func(childComplexity int) int
+		Void            func(childComplexity int) int
 	}
 
 	Tag struct {
@@ -99,16 +113,23 @@ type ComplexityRoot struct {
 
 type AssetResolver interface {
 	ID(ctx context.Context, obj *domain.Asset) (string, error)
+
+	Category(ctx context.Context, obj *domain.Asset) (*domain.AssetCategory, error)
+}
+type AssetCategoryResolver interface {
+	ID(ctx context.Context, obj *domain.AssetCategory) (string, error)
 }
 type MutationResolver interface {
 	Noop(ctx context.Context) (*bool, error)
 	CreateAsset(ctx context.Context, input domain.CreateAssetInput) (*domain.Asset, error)
+	CreateAssetCategory(ctx context.Context, input domain.CreateAssetCategoryInput) (*domain.AssetCategory, error)
 	CreateTag(ctx context.Context, input domain.CreateTagInput) (*domain.Tag, error)
 	CreateUser(ctx context.Context, input domain.CreateUserInput) (*domain.User, error)
 }
 type QueryResolver interface {
 	Void(ctx context.Context) (*string, error)
-	Assets(ctx context.Context, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
+	Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
+	AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error)
 	Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error)
 	User(ctx context.Context) (*domain.User, error)
 }
@@ -138,6 +159,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Asset.category":
+		if e.complexity.Asset.Category == nil {
+			break
+		}
+
+		return e.complexity.Asset.Category(childComplexity), true
+
 	case "Asset.id":
 		if e.complexity.Asset.ID == nil {
 			break
@@ -151,6 +179,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Asset.Name(childComplexity), true
+
+	case "AssetCategory.id":
+		if e.complexity.AssetCategory.ID == nil {
+			break
+		}
+
+		return e.complexity.AssetCategory.ID(childComplexity), true
+
+	case "AssetCategory.name":
+		if e.complexity.AssetCategory.Name == nil {
+			break
+		}
+
+		return e.complexity.AssetCategory.Name(childComplexity), true
+
+	case "AssetCategoryConnection.nodes":
+		if e.complexity.AssetCategoryConnection.Nodes == nil {
+			break
+		}
+
+		return e.complexity.AssetCategoryConnection.Nodes(childComplexity), true
+
+	case "AssetCategoryConnection.pageInfo":
+		if e.complexity.AssetCategoryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AssetCategoryConnection.PageInfo(childComplexity), true
 
 	case "AssetConnection.nodes":
 		if e.complexity.AssetConnection.Nodes == nil {
@@ -177,6 +233,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateAsset(childComplexity, args["input"].(domain.CreateAssetInput)), true
+
+	case "Mutation.createAssetCategory":
+		if e.complexity.Mutation.CreateAssetCategory == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createAssetCategory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateAssetCategory(childComplexity, args["input"].(domain.CreateAssetCategoryInput)), true
 
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
@@ -237,6 +305,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
+	case "Query.assetCategories":
+		if e.complexity.Query.AssetCategories == nil {
+			break
+		}
+
+		args, err := ec.field_Query_assetCategories_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AssetCategories(childComplexity, args["sortKey"].(domain.AssetCategorySortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
 			break
@@ -247,7 +327,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Assets(childComplexity, args["sortKey"].(domain.AssetSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+		return e.complexity.Query.Assets(childComplexity, args["categoryID"].(*string), args["sortKey"].(domain.AssetSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -325,6 +405,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputcreateAssetCategoryInput,
 		ec.unmarshalInputcreateAssetInput,
 		ec.unmarshalInputcreateTagInput,
 		ec.unmarshalInputcreateUserInput,
@@ -424,7 +505,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "resolver/asset.graphql" "resolver/mutation.graphql" "resolver/page_info.graphql" "resolver/query.graphql" "resolver/scalar.graphql" "resolver/tag.graphql" "resolver/user.graphql"
+//go:embed "resolver/asset.graphql" "resolver/asset_category.graphql" "resolver/mutation.graphql" "resolver/page_info.graphql" "resolver/query.graphql" "resolver/scalar.graphql" "resolver/tag.graphql" "resolver/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -437,6 +518,7 @@ func sourceData(filename string) string {
 
 var sources = []*ast.Source{
 	{Name: "resolver/asset.graphql", Input: sourceData("resolver/asset.graphql"), BuiltIn: false},
+	{Name: "resolver/asset_category.graphql", Input: sourceData("resolver/asset_category.graphql"), BuiltIn: false},
 	{Name: "resolver/mutation.graphql", Input: sourceData("resolver/mutation.graphql"), BuiltIn: false},
 	{Name: "resolver/page_info.graphql", Input: sourceData("resolver/page_info.graphql"), BuiltIn: false},
 	{Name: "resolver/query.graphql", Input: sourceData("resolver/query.graphql"), BuiltIn: false},
@@ -449,6 +531,29 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createAssetCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createAssetCategory_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createAssetCategory_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.CreateAssetCategoryInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNcreateAssetCategoryInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateAssetCategoryInput(ctx, tmp)
+	}
+
+	var zeroVal domain.CreateAssetCategoryInput
+	return zeroVal, nil
+}
 
 func (ec *executionContext) field_Mutation_createAsset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -542,41 +647,172 @@ func (ec *executionContext) field_Query___type_argsName(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Query_assets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_assetCategories_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_assets_argsSortKey(ctx, rawArgs)
+	arg0, err := ec.field_Query_assetCategories_argsSortKey(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["sortKey"] = arg0
-	arg1, err := ec.field_Query_assets_argsReverse(ctx, rawArgs)
+	arg1, err := ec.field_Query_assetCategories_argsReverse(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["reverse"] = arg1
-	arg2, err := ec.field_Query_assets_argsFirst(ctx, rawArgs)
+	arg2, err := ec.field_Query_assetCategories_argsFirst(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg2
-	arg3, err := ec.field_Query_assets_argsAfter(ctx, rawArgs)
+	arg3, err := ec.field_Query_assetCategories_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg3
-	arg4, err := ec.field_Query_assets_argsLast(ctx, rawArgs)
+	arg4, err := ec.field_Query_assetCategories_argsLast(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg4
-	arg5, err := ec.field_Query_assets_argsBefore(ctx, rawArgs)
+	arg5, err := ec.field_Query_assetCategories_argsBefore(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Query_assetCategories_argsSortKey(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.AssetCategorySortKey, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sortKey"))
+	if tmp, ok := rawArgs["sortKey"]; ok {
+		return ec.unmarshalNAssetCategorySortKey2kakeiboᚑwebᚑserverᚋdomainᚐAssetCategorySortKey(ctx, tmp)
+	}
+
+	var zeroVal domain.AssetCategorySortKey
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assetCategories_argsReverse(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
+	if tmp, ok := rawArgs["reverse"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assetCategories_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assetCategories_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assetCategories_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assetCategories_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_assets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_assets_argsCategoryID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["categoryID"] = arg0
+	arg1, err := ec.field_Query_assets_argsSortKey(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sortKey"] = arg1
+	arg2, err := ec.field_Query_assets_argsReverse(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["reverse"] = arg2
+	arg3, err := ec.field_Query_assets_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg3
+	arg4, err := ec.field_Query_assets_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg4
+	arg5, err := ec.field_Query_assets_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg5
+	arg6, err := ec.field_Query_assets_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg6
+	return args, nil
+}
+func (ec *executionContext) field_Query_assets_argsCategoryID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryID"))
+	if tmp, ok := rawArgs["categoryID"]; ok {
+		return ec.unmarshalOID2ᚖstring(ctx, tmp)
+	}
+
+	var zeroVal *string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_assets_argsSortKey(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -956,6 +1192,245 @@ func (ec *executionContext) fieldContext_Asset_name(_ context.Context, field gra
 	return fc, nil
 }
 
+func (ec *executionContext) _Asset_category(ctx context.Context, field graphql.CollectedField, obj *domain.Asset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Asset_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().Category(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*domain.AssetCategory)
+	fc.Result = res
+	return ec.marshalOAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Asset_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssetCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AssetCategory_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssetCategory_id(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssetCategory_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AssetCategory().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssetCategory_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssetCategory",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssetCategory_name(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssetCategory_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssetCategory_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssetCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssetCategoryConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategoryConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssetCategoryConnection_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.AssetCategory)
+	fc.Result = res
+	return ec.marshalNAssetCategory2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategoryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssetCategoryConnection_nodes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssetCategoryConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssetCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AssetCategory_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssetCategoryConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategoryConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssetCategoryConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssetCategoryConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssetCategoryConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AssetConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *domain.AssetConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AssetConnection_nodes(ctx, field)
 	if err != nil {
@@ -999,6 +1474,8 @@ func (ec *executionContext) fieldContext_AssetConnection_nodes(_ context.Context
 				return ec.fieldContext_Asset_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Asset_category(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
 		},
@@ -1144,6 +1621,8 @@ func (ec *executionContext) fieldContext_Mutation_createAsset(ctx context.Contex
 				return ec.fieldContext_Asset_id(ctx, field)
 			case "name":
 				return ec.fieldContext_Asset_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Asset_category(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
 		},
@@ -1156,6 +1635,67 @@ func (ec *executionContext) fieldContext_Mutation_createAsset(ctx context.Contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createAsset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createAssetCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createAssetCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateAssetCategory(rctx, fc.Args["input"].(domain.CreateAssetCategoryInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.AssetCategory)
+	fc.Result = res
+	return ec.marshalNAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createAssetCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssetCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AssetCategory_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createAssetCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1509,7 +2049,7 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Assets(rctx, fc.Args["sortKey"].(domain.AssetSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+		return ec.resolvers.Query().Assets(rctx, fc.Args["categoryID"].(*string), fc.Args["sortKey"].(domain.AssetSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1550,6 +2090,67 @@ func (ec *executionContext) fieldContext_Query_assets(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_assets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_assetCategories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_assetCategories(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AssetCategories(rctx, fc.Args["sortKey"].(domain.AssetCategorySortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.AssetCategoryConnection)
+	fc.Result = res
+	return ec.marshalNAssetCategoryConnection2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategoryConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_assetCategories(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodes":
+				return ec.fieldContext_AssetCategoryConnection_nodes(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_AssetCategoryConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategoryConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_assetCategories_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4029,8 +4630,8 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputcreateAssetInput(ctx context.Context, obj any) (domain.CreateAssetInput, error) {
-	var it domain.CreateAssetInput
+func (ec *executionContext) unmarshalInputcreateAssetCategoryInput(ctx context.Context, obj any) (domain.CreateAssetCategoryInput, error) {
+	var it domain.CreateAssetCategoryInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -4050,6 +4651,40 @@ func (ec *executionContext) unmarshalInputcreateAssetInput(ctx context.Context, 
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputcreateAssetInput(ctx context.Context, obj any) (domain.CreateAssetInput, error) {
+	var it domain.CreateAssetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "categoryId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "categoryId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CategoryID = data
 		}
 	}
 
@@ -4177,6 +4812,158 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "category":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_category(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var assetCategoryImplementors = []string{"AssetCategory"}
+
+func (ec *executionContext) _AssetCategory(ctx context.Context, sel ast.SelectionSet, obj *domain.AssetCategory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, assetCategoryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AssetCategory")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AssetCategory_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "name":
+			out.Values[i] = ec._AssetCategory_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var assetCategoryConnectionImplementors = []string{"AssetCategoryConnection"}
+
+func (ec *executionContext) _AssetCategoryConnection(ctx context.Context, sel ast.SelectionSet, obj *domain.AssetCategoryConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, assetCategoryConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AssetCategoryConnection")
+		case "nodes":
+			out.Values[i] = ec._AssetCategoryConnection_nodes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._AssetCategoryConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4270,6 +5057,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createAsset":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createAsset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createAssetCategory":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createAssetCategory(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -4407,6 +5201,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_assets(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "assetCategories":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_assetCategories(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5081,6 +5897,88 @@ func (ec *executionContext) marshalNAsset2ᚖkakeiboᚑwebᚑserverᚋdomainᚐA
 	return ec._Asset(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNAssetCategory2kakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx context.Context, sel ast.SelectionSet, v domain.AssetCategory) graphql.Marshaler {
+	return ec._AssetCategory(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAssetCategory2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*domain.AssetCategory) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx context.Context, sel ast.SelectionSet, v *domain.AssetCategory) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AssetCategory(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAssetCategoryConnection2kakeiboᚑwebᚑserverᚋdomainᚐAssetCategoryConnection(ctx context.Context, sel ast.SelectionSet, v domain.AssetCategoryConnection) graphql.Marshaler {
+	return ec._AssetCategoryConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAssetCategoryConnection2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategoryConnection(ctx context.Context, sel ast.SelectionSet, v *domain.AssetCategoryConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AssetCategoryConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAssetCategorySortKey2kakeiboᚑwebᚑserverᚋdomainᚐAssetCategorySortKey(ctx context.Context, v any) (domain.AssetCategorySortKey, error) {
+	var res domain.AssetCategorySortKey
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAssetCategorySortKey2kakeiboᚑwebᚑserverᚋdomainᚐAssetCategorySortKey(ctx context.Context, sel ast.SelectionSet, v domain.AssetCategorySortKey) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNAssetConnection2kakeiboᚑwebᚑserverᚋdomainᚐAssetConnection(ctx context.Context, sel ast.SelectionSet, v domain.AssetConnection) graphql.Marshaler {
 	return ec._AssetConnection(ctx, sel, &v)
 }
@@ -5507,6 +6405,11 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalNcreateAssetCategoryInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateAssetCategoryInput(ctx context.Context, v any) (domain.CreateAssetCategoryInput, error) {
+	res, err := ec.unmarshalInputcreateAssetCategoryInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNcreateAssetInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateAssetInput(ctx context.Context, v any) (domain.CreateAssetInput, error) {
 	res, err := ec.unmarshalInputcreateAssetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5520,6 +6423,13 @@ func (ec *executionContext) unmarshalNcreateTagInput2kakeiboᚑwebᚑserverᚋdo
 func (ec *executionContext) unmarshalNcreateUserInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateUserInput(ctx context.Context, v any) (domain.CreateUserInput, error) {
 	res, err := ec.unmarshalInputcreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx context.Context, sel ast.SelectionSet, v *domain.AssetCategory) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AssetCategory(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
@@ -5545,6 +6455,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalID(*v)
 	return res
 }
 
