@@ -21,18 +21,15 @@ func (r *assetResolver) ID(ctx context.Context, obj *domain.Asset) (string, erro
 
 // Category is the resolver for the category field.
 func (r *assetResolver) Category(ctx context.Context, obj *domain.Asset) (*domain.AssetCategory, error) {
-	userID, err := ctxdef.UserID(ctx)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get user ID from context: %w", err)
-	}
-
 	if obj.CategoryID == nil {
 		return nil, nil
 	}
 
-	category, err := r.usecase.GetAssetCategoryByID(ctx, userID, *obj.CategoryID)
+	thunk := r.Loaders.AssetCategoryLoader.Load(ctx, *obj.CategoryID)
+
+	category, err := thunk()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to get asset category by ID: %w", err)
+		return nil, xerrors.Errorf(": %w", err)
 	}
 
 	return category, nil

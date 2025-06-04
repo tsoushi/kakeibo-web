@@ -1,6 +1,9 @@
 package resolver
 
-import "kakeibo-web-server/usecase"
+import (
+	"kakeibo-web-server/handler/graph/dataloader"
+	"kakeibo-web-server/usecase"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -8,10 +11,12 @@ import "kakeibo-web-server/usecase"
 
 type Resolver struct {
 	usecase *usecase.Usecase
+	*dataloader.Loaders
 }
 
 func NewResolver(usecase *usecase.Usecase) *Resolver {
 	return &Resolver{
 		usecase: usecase,
+		Loaders: dataloader.NewLoader(usecase),
 	}
 }

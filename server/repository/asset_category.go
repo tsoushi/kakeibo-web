@@ -89,3 +89,18 @@ func (r *AssetCategoryRepository) GetMultiByUserID(ctx context.Context, pagePara
 
 	return categories, pageInfo, nil
 }
+
+func (r *AssetCategoryRepository) GetMultiByAssetCategoryIDs(ctx context.Context, userID domain.UserID, assetCategoryIDs []domain.AssetCategoryID) ([]*domain.AssetCategory, error) {
+	categories := make([]*domain.AssetCategory, 0)
+
+	stmt := r.sess.Select("*").From("asset_category").
+		Where("user_id = ?", userID).
+		Where("id IN ?", assetCategoryIDs)
+
+	_, err := stmt.LoadContext(ctx, &categories)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get asset categories by ID: %w", err)
+	}
+
+	return categories, nil
+}
