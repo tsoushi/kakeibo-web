@@ -28,6 +28,21 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input domain.CreateTag
 	return tag, nil
 }
 
+// DeleteTag is the resolver for the deleteTag field.
+func (r *mutationResolver) DeleteTag(ctx context.Context, input domain.DeleteTagInput) (string, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return "", xerrors.Errorf(": %w", err)
+	}
+
+	tag, err := r.usecase.DeleteTag(ctx, userID, domain.TagID(input.ID))
+	if err != nil {
+		return "", xerrors.Errorf(": %w", err)
+	}
+
+	return string(tag), nil
+}
+
 // Tags is the resolver for the tags field.
 func (r *queryResolver) Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error) {
 	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
