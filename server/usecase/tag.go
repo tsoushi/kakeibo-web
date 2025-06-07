@@ -24,3 +24,12 @@ func (u *Usecase) GetTagsByUserID(ctx context.Context, pageParam *domain.PagePar
 
 	return tags, pageInfo, nil
 }
+
+func (u *Usecase) DeleteTag(ctx context.Context, userID domain.UserID, tagID domain.TagID) (domain.TagID, error) {
+	deletedTag, err := u.repo.Tag.Delete(ctx, userID, tagID)
+	if err != nil {
+		return "", xerrors.Errorf(": %w", err)
+	}
+
+	return deletedTag, nil
+}

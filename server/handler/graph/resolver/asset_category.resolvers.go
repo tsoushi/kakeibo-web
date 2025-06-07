@@ -32,6 +32,21 @@ func (r *mutationResolver) CreateAssetCategory(ctx context.Context, input domain
 	return assetCategory, nil
 }
 
+// DeleteAssetCategory is the resolver for the deleteAssetCategory field.
+func (r *mutationResolver) DeleteAssetCategory(ctx context.Context, input domain.DeleteAssetCategoryInput) (string, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user ID from context: %w", err)
+	}
+
+	assetCategoryID, err := r.usecase.DeleteAssetCategory(ctx, userID, domain.AssetCategoryID(input.ID))
+	if err != nil {
+		return "", fmt.Errorf("failed to delete asset category: %w", err)
+	}
+
+	return string(assetCategoryID), nil
+}
+
 // AssetCategories is the resolver for the assetCategories field.
 func (r *queryResolver) AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error) {
 	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)

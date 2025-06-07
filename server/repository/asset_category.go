@@ -104,3 +104,24 @@ func (r *AssetCategoryRepository) GetMultiByAssetCategoryIDs(ctx context.Context
 
 	return categories, nil
 }
+
+func (r *AssetCategoryRepository) Delete(ctx context.Context, userID domain.UserID, assetCategoryID domain.AssetCategoryID) (domain.AssetCategoryID, error) {
+	runner := getRunner(ctx, r.sess)
+
+	result, err := runner.DeleteFrom("asset_category").
+		Where("id = ? AND user_id = ?", assetCategoryID, userID).
+		Exec()
+	if err != nil {
+		return "", xerrors.Errorf("failed to delete asset category: %w", err)
+	}
+
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return "", xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return "", domain.ErrEntityNotFound
+	}
+
+	return assetCategoryID, nil
+}
