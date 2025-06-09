@@ -71,3 +71,26 @@ func (r *TagRepository) GetMultiByUserID(ctx context.Context, pageParam *domain.
 
 	return tags, pageInfo, nil
 }
+
+func (r *TagRepository) Delete(ctx context.Context, userID domain.UserID, tagID domain.TagID) (domain.TagID, error) {
+	runner := getRunner(ctx, r.sess)
+
+	result, err := runner.DeleteFrom(tagtableName).
+		Where(dbr.Eq("id", tagID)).
+		Where(dbr.Eq("user_id", userID)).
+		Exec()
+
+	if err != nil {
+		return "", xerrors.Errorf("failed to delete tag: %w", err)
+	}
+
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return "", xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return "", domain.ErrEntityNotFound
+	}
+
+	return tagID, nil
+}
