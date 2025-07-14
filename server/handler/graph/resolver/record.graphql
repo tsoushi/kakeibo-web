@@ -1,0 +1,41 @@
+type AssetChange {
+    asset: Asset!
+    amount: Int!
+}
+
+type Record {
+    id: ID!
+    recordType RecordType!
+    title String!
+    description String!
+    assetChangeIncome: AssetChange
+    assetChangeExpense: AssetChange
+}
+
+enum RecordType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+type RecordConnection {
+    nodes: [Record!]!
+    pageInfo: PageInfo!
+}
+
+enum RecordSortKey {
+    CREATED_AT
+}
+
+extend type Query {
+    records(sortKey: RecordSortKey! = CREATED_AT, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): RecordConnection!
+}
+
+extend type Mutation {
+    createRecord(input: createRecordInput!): Record!
+}
+
+input createRecordInput {
+    title: String! 
+    description: String!
+}
