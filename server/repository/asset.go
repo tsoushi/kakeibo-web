@@ -91,3 +91,25 @@ func (r *AssetRepository) GetMultiByUserIDAndCategoryID(ctx context.Context, pag
 
 	return assets, pageInfo, nil
 }
+
+func (r *AssetRepository) GetMultiByUserIDAndIDs(ctx context.Context, userID domain.UserID, assetIDs []domain.AssetID) ([]*domain.Asset, error) {
+	runner := getRunner(ctx, r.sess)
+	assets := make([]*domain.Asset, 0)
+
+	if len(assetIDs) == 0 {
+		return assets, nil
+	}
+
+	_, err := runner.Select("*").
+		From(assettableName).
+		Where("user_id = ? AND id IN ?", userID, assetIDs).
+		LoadContext(ctx, &assets)
+	if err != nil {
+		if errors.Is(err, dbr.ErrNotFound) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, xerrors.Errorf("failed to get assets by userID and IDs: %w", err)
+	}
+
+	return assets, nil
+}

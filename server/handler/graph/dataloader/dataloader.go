@@ -12,18 +12,24 @@ import (
 
 type Loaders struct {
 	AssetCategoryLoader dataloader.Interface[domain.AssetCategoryID, *domain.AssetCategory]
+	AssetChangeLoader   dataloader.Interface[domain.RecordID, *AssetChangesAssociation]
+	AssetLoader         dataloader.Interface[domain.AssetID, *domain.Asset]
 }
 
 func NewLoader(usecase *usecase.Usecase) *Loaders {
-	assetCategoryBatcher := &assetCategoryBatcher{usecase: *usecase}
+	assetCategoryBatcher := &assetCategoryBatcher{usecase: usecase}
+	assetChangeBatcher := &assetChangeBatcher{usecase: usecase}
+	assetBatcher := &assetBatcher{usecase: usecase}
 
 	return &Loaders{
 		AssetCategoryLoader: dataloader.NewBatchedLoader(assetCategoryBatcher.BatchGetAssetCategories),
+		AssetChangeLoader:   dataloader.NewBatchedLoader(assetChangeBatcher.BatchGetAssetChanges),
+		AssetLoader:         dataloader.NewBatchedLoader(assetBatcher.BatchGetAssets),
 	}
 }
 
 type assetCategoryBatcher struct {
-	usecase usecase.Usecase
+	usecase *usecase.Usecase
 }
 
 func (a *assetCategoryBatcher) BatchGetAssetCategories(ctx context.Context, assetCategoryIDs []domain.AssetCategoryID) []*dataloader.Result[*domain.AssetCategory] {
