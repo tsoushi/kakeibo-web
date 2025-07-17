@@ -42,3 +42,12 @@ func (u *Usecase) GetAssetCategoriesByIDs(ctx context.Context, userID domain.Use
 
 	return categories, nil
 }
+
+func (u *Usecase) DeleteAssetCategory(ctx context.Context, userID domain.UserID, assetCategoryID domain.AssetCategoryID) (domain.AssetCategoryID, error) {
+	deletedCategoryID, err := u.repo.AssetCategory.Delete(ctx, userID, assetCategoryID)
+	if err != nil {
+		return "", xerrors.Errorf(": %w", err)
+	}
+
+	return deletedCategoryID, nil
+}

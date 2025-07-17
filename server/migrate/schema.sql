@@ -82,8 +82,8 @@ CREATE TABLE IF NOT EXISTS record_tag (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (record_id, tag_id),
-    CONSTRAINT fk_record FOREIGN KEY (record_id) REFERENCES record(id),
-    CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id)
+    CONSTRAINT fk_record FOREIGN KEY (record_id) REFERENCES record(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS total_assets_snapshot (
