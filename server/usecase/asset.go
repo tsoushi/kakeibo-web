@@ -24,3 +24,16 @@ func (u *Usecase) GetAssetsByUserIDAndCategoryID(ctx context.Context, pageParam 
 
 	return assets, pageInfo, nil
 }
+
+func (u *Usecase) GetAssetsByIDs(ctx context.Context, userID domain.UserID, assetIDs []domain.AssetID) ([]*domain.Asset, error) {
+	if len(assetIDs) == 0 {
+		return nil, nil
+	}
+
+	assets, err := u.repo.Asset.GetMultiByUserIDAndIDs(ctx, userID, assetIDs)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return assets, nil
+}

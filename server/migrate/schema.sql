@@ -8,6 +8,28 @@ CREATE TABLE IF NOT EXISTS user (
     UNIQUE (name)
 );
 
+CREATE TABLE IF NOT EXISTS asset_category (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_asset_category_user FOREIGN KEY (user_id) REFERENCES user(id)
+);
+
+CREATE TABLE IF NOT EXISTS asset (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_asset_user FOREIGN KEY (user_id) REFERENCES user(id),
+    CONSTRAINT fk_asset_category FOREIGN KEY (category_id) REFERENCES asset_category(id) ON DELETE SET NULL
+);
+
 CREATE TABLE IF NOT EXISTS record_type (
     name VARCHAR(32) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -21,11 +43,26 @@ CREATE TABLE IF NOT EXISTS record (
     record_type VARCHAR(32) NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES user(id), -- synbolを命名しないとmysqldefがエラーになる
     CONSTRAINT fk_record_type FOREIGN KEY (record_type) REFERENCES record_type(name)
+);
+
+CREATE TABLE IF NOT EXISTS asset_change (
+    id VARCHAR(255),
+    user_id VARCHAR(255) NOT NULL,
+    record_id VARCHAR(255) NOT NULL,
+    asset_id VARCHAR(255) NOT NULL,
+    amount INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_asset_change_user FOREIGN KEY (user_id) REFERENCES user(id),
+    CONSTRAINT fk_asset_change_asset FOREIGN KEY (asset_id) REFERENCES asset(id),
+    CONSTRAINT fk_asset_change_record FOREIGN KEY (record_id) REFERENCES record(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tag (
@@ -49,24 +86,16 @@ CREATE TABLE IF NOT EXISTS record_tag (
     CONSTRAINT fk_tag FOREIGN KEY (tag_id) REFERENCES tag(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS asset_category (
+CREATE TABLE IF NOT EXISTS total_assets_snapshot (
     id VARCHAR(255),
     user_id VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    asset_id VARCHAR(255),
+    amount INT NOT NULL,
+    at TIMESTAMP NOT NULL,
+    is_valid BOOLEAN NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    CONSTRAINT fk_asset_category_user FOREIGN KEY (user_id) REFERENCES user(id)
-);
-
-CREATE TABLE IF NOT EXISTS asset (
-    id VARCHAR(255),
-    user_id VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    category_id VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_asset_user FOREIGN KEY (user_id) REFERENCES user(id),
-    CONSTRAINT fk_asset_category FOREIGN KEY (category_id) REFERENCES asset_category(id) ON DELETE SET NULL
+    CONSTRAINT fk_total_assets_snapshot_user FOREIGN KEY (user_id) REFERENCES user(id),
+    CONSTRAINT fk_total_assets_snapshot_asset FOREIGN KEY (asset_id) REFERENCES asset(id) ON DELETE SET NULL
 );

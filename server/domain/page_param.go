@@ -20,6 +20,12 @@ func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, 
 	if first == nil && last == nil {
 		return nil, xerrors.Errorf("either first or last must be set: %w", ErrInvalidPageParam)
 	}
+	if first != nil && before != nil {
+		return nil, xerrors.Errorf("first and before cannot be set at the same time: %w", ErrInvalidPageParam)
+	}
+	if last != nil && after != nil {
+		return nil, xerrors.Errorf("last and after cannot be set at the same time: %w", ErrInvalidPageParam)
+	}
 
 	return &PageParam{
 		First:   first,
