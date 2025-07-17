@@ -98,7 +98,7 @@ func (r *queryResolver) Records(ctx context.Context, assetID *string, sortKey do
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	initTotalAssetAmount, err := r.usecase.CulcTotalAssetAmount(ctx, userID, assetIDPtr, *oldestRecord)
+	initTotalAssetAmount, err := r.usecase.CulcTotalAssetAmountAndCreateSnapshot(ctx, userID, assetIDPtr, *oldestRecord)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}

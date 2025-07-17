@@ -14,14 +14,21 @@ func (u *Usecase) CreateIncomeRecord(ctx context.Context, userID domain.UserID, 
 		return nil, nil, err
 	}
 
-	_, err = u.repo.Record.Insert(ctx, record)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to insert record: %w", err)
-	}
+	err = u.repo.RunInTx(ctx, func(ctx context.Context) error {
+		_, err = u.repo.Record.Insert(ctx, record)
+		if err != nil {
+			return xerrors.Errorf("failed to insert record: %w", err)
+		}
 
-	_, err = u.repo.AssetChange.Insert(ctx, assetChange)
+		_, err = u.repo.AssetChange.Insert(ctx, assetChange)
+		if err != nil {
+			return xerrors.Errorf("failed to insert asset change: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to insert asset change: %w", err)
+		return nil, nil, xerrors.Errorf(": %w", err)
 	}
 
 	return record, assetChange, nil
@@ -33,14 +40,21 @@ func (u *Usecase) CreateExpenseRecord(ctx context.Context, userID domain.UserID,
 		return nil, nil, err
 	}
 
-	_, err = u.repo.Record.Insert(ctx, record)
-	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to insert record: %w", err)
-	}
+	err = u.repo.RunInTx(ctx, func(ctx context.Context) error {
+		_, err = u.repo.Record.Insert(ctx, record)
+		if err != nil {
+			return xerrors.Errorf("failed to insert record: %w", err)
+		}
 
-	_, err = u.repo.AssetChange.Insert(ctx, assetChange)
+		_, err = u.repo.AssetChange.Insert(ctx, assetChange)
+		if err != nil {
+			return xerrors.Errorf("failed to insert asset change: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return nil, nil, xerrors.Errorf("failed to insert asset change: %w", err)
+		return nil, nil, xerrors.Errorf(": %w", err)
 	}
 
 	return record, assetChange, nil
@@ -52,18 +66,25 @@ func (u *Usecase) CreateTransferRecord(ctx context.Context, userID domain.UserID
 		return nil, nil, nil, xerrors.Errorf("failed to create transfer record: %w", err)
 	}
 
-	_, err = u.repo.Record.Insert(ctx, record)
-	if err != nil {
-		return nil, nil, nil, xerrors.Errorf("failed to insert record: %w", err)
-	}
+	err = u.repo.RunInTx(ctx, func(ctx context.Context) error {
+		_, err = u.repo.Record.Insert(ctx, record)
+		if err != nil {
+			return xerrors.Errorf("failed to insert record: %w", err)
+		}
 
-	_, err = u.repo.AssetChange.Insert(ctx, fromAssetChange)
+		_, err = u.repo.AssetChange.Insert(ctx, fromAssetChange)
+		if err != nil {
+			return xerrors.Errorf("failed to insert from asset change: %w", err)
+		}
+		_, err = u.repo.AssetChange.Insert(ctx, toAssetChange)
+		if err != nil {
+			return xerrors.Errorf("failed to insert to asset change: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return nil, nil, nil, xerrors.Errorf("failed to insert from asset change: %w", err)
-	}
-	_, err = u.repo.AssetChange.Insert(ctx, toAssetChange)
-	if err != nil {
-		return nil, nil, nil, xerrors.Errorf("failed to insert to asset change: %w", err)
+		return nil, nil, nil, xerrors.Errorf(": %w", err)
 	}
 
 	return record, fromAssetChange, toAssetChange, nil
@@ -78,7 +99,7 @@ func (u *Usecase) GetRecordsByUserIDAndAssetID(ctx context.Context, pageParam *d
 	return records, pageInfo, nil
 }
 
-func (u *Usecase) CulcTotalAssetAmount(ctx context.Context, userID domain.UserID, assetID *domain.AssetID, beforeRecord domain.Record) (int, error) {
+func (u *Usecase) CulcTotalAssetAmountAndCreateSnapshot(ctx context.Context, userID domain.UserID, assetID *domain.AssetID, beforeRecord domain.Record) (int, error) {
 	totalAssetsSnapshot, err := u.repo.TotalAssetsSnapshot.OptionalGetValidLatestByUserIDAndAssetIDAndBefore(ctx, userID, assetID, beforeRecord.At)
 	if err != nil {
 		return 0, xerrors.Errorf("failed to get total assets snapshot: %w", err)
