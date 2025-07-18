@@ -10,10 +10,9 @@ type PageParam struct {
 	Last    *int
 	Before  *PageCursor
 	SortKey string
-	Reverse bool
 }
 
-func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, sortKey string, reverse bool) (*PageParam, error) {
+func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, sortKey string) (*PageParam, error) {
 	if first != nil && last != nil {
 		return nil, xerrors.Errorf("first and last cannot be set at the same time: %w", ErrInvalidPageParam)
 	}
@@ -33,7 +32,6 @@ func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, 
 		Last:    last,
 		Before:  before,
 		SortKey: sortKey,
-		Reverse: reverse,
 	}, nil
 }
 

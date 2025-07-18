@@ -101,10 +101,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AssetCategories func(childComplexity int, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
-		Assets          func(childComplexity int, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
-		Records         func(childComplexity int, assetID *string, sortKey domain.RecordSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
-		Tags            func(childComplexity int, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		AssetCategories func(childComplexity int, sortKey domain.AssetCategorySortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Assets          func(childComplexity int, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Records         func(childComplexity int, assetID *string, sortKey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Tags            func(childComplexity int, sortKey domain.TagSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
 		User            func(childComplexity int) int
 		Void            func(childComplexity int) int
 	}
@@ -166,10 +166,10 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Void(ctx context.Context) (*string, error)
-	Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
-	AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error)
-	Records(ctx context.Context, assetID *string, sortKey domain.RecordSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error)
-	Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error)
+	Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
+	AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error)
+	Records(ctx context.Context, assetID *string, sortKey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error)
+	Tags(ctx context.Context, sortKey domain.TagSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error)
 	User(ctx context.Context) (*domain.User, error)
 }
 type RecordResolver interface {
@@ -434,7 +434,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AssetCategories(childComplexity, args["sortKey"].(domain.AssetCategorySortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+		return e.complexity.Query.AssetCategories(childComplexity, args["sortKey"].(domain.AssetCategorySortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
@@ -446,7 +446,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Assets(childComplexity, args["categoryID"].(*string), args["sortKey"].(domain.AssetSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+		return e.complexity.Query.Assets(childComplexity, args["categoryID"].(*string), args["sortKey"].(domain.AssetSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.records":
 		if e.complexity.Query.Records == nil {
@@ -458,7 +458,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Records(childComplexity, args["assetID"].(*string), args["sortKey"].(domain.RecordSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+		return e.complexity.Query.Records(childComplexity, args["assetID"].(*string), args["sortKey"].(domain.RecordSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -470,7 +470,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Tags(childComplexity, args["sortKey"].(domain.TagSortKey), args["reverse"].(bool), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+		return e.complexity.Query.Tags(childComplexity, args["sortKey"].(domain.TagSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -977,31 +977,26 @@ func (ec *executionContext) field_Query_assetCategories_args(ctx context.Context
 		return nil, err
 	}
 	args["sortKey"] = arg0
-	arg1, err := ec.field_Query_assetCategories_argsReverse(ctx, rawArgs)
+	arg1, err := ec.field_Query_assetCategories_argsFirst(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["reverse"] = arg1
-	arg2, err := ec.field_Query_assetCategories_argsFirst(ctx, rawArgs)
+	args["first"] = arg1
+	arg2, err := ec.field_Query_assetCategories_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["first"] = arg2
-	arg3, err := ec.field_Query_assetCategories_argsAfter(ctx, rawArgs)
+	args["after"] = arg2
+	arg3, err := ec.field_Query_assetCategories_argsLast(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["after"] = arg3
-	arg4, err := ec.field_Query_assetCategories_argsLast(ctx, rawArgs)
+	args["last"] = arg3
+	arg4, err := ec.field_Query_assetCategories_argsBefore(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg4
-	arg5, err := ec.field_Query_assetCategories_argsBefore(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["before"] = arg5
+	args["before"] = arg4
 	return args, nil
 }
 func (ec *executionContext) field_Query_assetCategories_argsSortKey(
@@ -1014,19 +1009,6 @@ func (ec *executionContext) field_Query_assetCategories_argsSortKey(
 	}
 
 	var zeroVal domain.AssetCategorySortKey
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assetCategories_argsReverse(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
-	if tmp, ok := rawArgs["reverse"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -1095,31 +1077,26 @@ func (ec *executionContext) field_Query_assets_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["sortKey"] = arg1
-	arg2, err := ec.field_Query_assets_argsReverse(ctx, rawArgs)
+	arg2, err := ec.field_Query_assets_argsFirst(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["reverse"] = arg2
-	arg3, err := ec.field_Query_assets_argsFirst(ctx, rawArgs)
+	args["first"] = arg2
+	arg3, err := ec.field_Query_assets_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["first"] = arg3
-	arg4, err := ec.field_Query_assets_argsAfter(ctx, rawArgs)
+	args["after"] = arg3
+	arg4, err := ec.field_Query_assets_argsLast(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["after"] = arg4
-	arg5, err := ec.field_Query_assets_argsLast(ctx, rawArgs)
+	args["last"] = arg4
+	arg5, err := ec.field_Query_assets_argsBefore(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg5
-	arg6, err := ec.field_Query_assets_argsBefore(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["before"] = arg6
+	args["before"] = arg5
 	return args, nil
 }
 func (ec *executionContext) field_Query_assets_argsCategoryID(
@@ -1145,19 +1122,6 @@ func (ec *executionContext) field_Query_assets_argsSortKey(
 	}
 
 	var zeroVal domain.AssetSortKey
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_assets_argsReverse(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
-	if tmp, ok := rawArgs["reverse"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -1226,31 +1190,26 @@ func (ec *executionContext) field_Query_records_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["sortKey"] = arg1
-	arg2, err := ec.field_Query_records_argsReverse(ctx, rawArgs)
+	arg2, err := ec.field_Query_records_argsFirst(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["reverse"] = arg2
-	arg3, err := ec.field_Query_records_argsFirst(ctx, rawArgs)
+	args["first"] = arg2
+	arg3, err := ec.field_Query_records_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["first"] = arg3
-	arg4, err := ec.field_Query_records_argsAfter(ctx, rawArgs)
+	args["after"] = arg3
+	arg4, err := ec.field_Query_records_argsLast(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["after"] = arg4
-	arg5, err := ec.field_Query_records_argsLast(ctx, rawArgs)
+	args["last"] = arg4
+	arg5, err := ec.field_Query_records_argsBefore(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg5
-	arg6, err := ec.field_Query_records_argsBefore(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["before"] = arg6
+	args["before"] = arg5
 	return args, nil
 }
 func (ec *executionContext) field_Query_records_argsAssetID(
@@ -1276,19 +1235,6 @@ func (ec *executionContext) field_Query_records_argsSortKey(
 	}
 
 	var zeroVal domain.RecordSortKey
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_records_argsReverse(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
-	if tmp, ok := rawArgs["reverse"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -1352,31 +1298,26 @@ func (ec *executionContext) field_Query_tags_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["sortKey"] = arg0
-	arg1, err := ec.field_Query_tags_argsReverse(ctx, rawArgs)
+	arg1, err := ec.field_Query_tags_argsFirst(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["reverse"] = arg1
-	arg2, err := ec.field_Query_tags_argsFirst(ctx, rawArgs)
+	args["first"] = arg1
+	arg2, err := ec.field_Query_tags_argsAfter(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["first"] = arg2
-	arg3, err := ec.field_Query_tags_argsAfter(ctx, rawArgs)
+	args["after"] = arg2
+	arg3, err := ec.field_Query_tags_argsLast(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["after"] = arg3
-	arg4, err := ec.field_Query_tags_argsLast(ctx, rawArgs)
+	args["last"] = arg3
+	arg4, err := ec.field_Query_tags_argsBefore(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["last"] = arg4
-	arg5, err := ec.field_Query_tags_argsBefore(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["before"] = arg5
+	args["before"] = arg4
 	return args, nil
 }
 func (ec *executionContext) field_Query_tags_argsSortKey(
@@ -1389,19 +1330,6 @@ func (ec *executionContext) field_Query_tags_argsSortKey(
 	}
 
 	var zeroVal domain.TagSortKey
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_tags_argsReverse(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("reverse"))
-	if tmp, ok := rawArgs["reverse"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
 	return zeroVal, nil
 }
 
@@ -2921,7 +2849,7 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Assets(rctx, fc.Args["categoryID"].(*string), fc.Args["sortKey"].(domain.AssetSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+		return ec.resolvers.Query().Assets(rctx, fc.Args["categoryID"].(*string), fc.Args["sortKey"].(domain.AssetSortKey), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2982,7 +2910,7 @@ func (ec *executionContext) _Query_assetCategories(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AssetCategories(rctx, fc.Args["sortKey"].(domain.AssetCategorySortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+		return ec.resolvers.Query().AssetCategories(rctx, fc.Args["sortKey"].(domain.AssetCategorySortKey), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3043,7 +2971,7 @@ func (ec *executionContext) _Query_records(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Records(rctx, fc.Args["assetID"].(*string), fc.Args["sortKey"].(domain.RecordSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+		return ec.resolvers.Query().Records(rctx, fc.Args["assetID"].(*string), fc.Args["sortKey"].(domain.RecordSortKey), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3106,7 +3034,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Tags(rctx, fc.Args["sortKey"].(domain.TagSortKey), fc.Args["reverse"].(bool), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+		return ec.resolvers.Query().Tags(rctx, fc.Args["sortKey"].(domain.TagSortKey), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

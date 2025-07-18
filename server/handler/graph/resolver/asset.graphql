@@ -15,7 +15,7 @@ enum AssetSortKey {
 }
 
 extend type Query {
-    assets(categoryID: ID, sortKey: AssetSortKey! = NAME, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetConnection!
+    assets(categoryID: ID, sortKey: AssetSortKey! = NAME, first: Int, after: PageCursor, last: Int, before: PageCursor): AssetConnection!
 }
 
 extend type Mutation {

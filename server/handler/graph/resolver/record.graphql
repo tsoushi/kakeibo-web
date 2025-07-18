@@ -30,7 +30,7 @@ enum RecordSortKey {
 }
 
 extend type Query {
-    records(assetID: ID, sortKey: RecordSortKey! = AT, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): RecordConnection!
+    records(assetID: ID, sortKey: RecordSortKey! = AT, first: Int, after: PageCursor, last: Int, before: PageCursor): RecordConnection!
 }
 
 extend type Mutation {

@@ -72,8 +72,8 @@ func (r *mutationResolver) CreateTransferRecord(ctx context.Context, input domai
 }
 
 // Records is the resolver for the records field.
-func (r *queryResolver) Records(ctx context.Context, assetID *string, sortKey domain.RecordSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error) {
-	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+func (r *queryResolver) Records(ctx context.Context, assetID *string, sortKey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}

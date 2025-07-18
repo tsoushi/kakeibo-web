@@ -13,7 +13,7 @@ enum TagSortKey {
 }
 
 extend type Query {
-    tags(sortKey: TagSortKey! = NAME, reverse: Boolean! = false, first: Int, after: PageCursor, last: Int, before: PageCursor): TagConnection!
+    tags(sortKey: TagSortKey! = NAME, first: Int, after: PageCursor, last: Int, before: PageCursor): TagConnection!
 }
 
 extend type Mutation {

@@ -44,8 +44,8 @@ func (r *mutationResolver) DeleteTag(ctx context.Context, input domain.DeleteTag
 }
 
 // Tags is the resolver for the tags field.
-func (r *queryResolver) Tags(ctx context.Context, sortKey domain.TagSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error) {
-	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+func (r *queryResolver) Tags(ctx context.Context, sortKey domain.TagSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
