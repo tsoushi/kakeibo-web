@@ -93,7 +93,7 @@ func (r *queryResolver) Records(ctx context.Context, assetID *string, sortKey do
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	oldestRecord, err := records.OldestRecord(!pageParam.IsForward())
+	oldestRecord, err := records.OldestRecord(pageParam.IsReverse())
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}

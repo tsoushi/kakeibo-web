@@ -12,6 +12,7 @@ type PageParam struct {
 	SortKey string
 }
 
+// NewPageParam でフィールドの整合性チェックを行うため、New後にフィールドを直接変更しないこと（panicになる）
 func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, sortKey string) (*PageParam, error) {
 	if first != nil && last != nil {
 		return nil, xerrors.Errorf("first and last cannot be set at the same time: %w", ErrInvalidPageParam)
@@ -35,6 +36,12 @@ func NewPageParam(first *int, after *PageCursor, last *int, before *PageCursor, 
 	}, nil
 }
 
-func (p PageParam) IsForward() bool {
-	return p.First != nil
+func (p PageParam) IsReverse() bool {
+	if p.First != nil && p.Last == nil {
+		return false
+	} else if p.First == nil && p.Last != nil {
+		return true
+	}
+
+	panic("invalid PageParam")
 }
