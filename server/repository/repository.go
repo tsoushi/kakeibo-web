@@ -103,12 +103,12 @@ func paginate(pageParam *domain.PageParam, stmt *dbr.SelectStmt) (*dbr.SelectStm
 		}
 	}
 
-	if pageParam.IsForward() {
-		stmt = stmt.OrderAsc(pageParam.SortKey)
-		stmt = stmt.OrderAsc("id")
-	} else {
+	if pageParam.IsReverse() {
 		stmt = stmt.OrderDesc(pageParam.SortKey)
 		stmt = stmt.OrderDesc("id")
+	} else {
+		stmt = stmt.OrderAsc(pageParam.SortKey)
+		stmt = stmt.OrderAsc("id")
 	}
 
 	return stmt, nil

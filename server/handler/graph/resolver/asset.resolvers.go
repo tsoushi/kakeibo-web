@@ -56,8 +56,8 @@ func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateA
 }
 
 // Assets is the resolver for the assets field.
-func (r *queryResolver) Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
-	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+func (r *queryResolver) Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}

@@ -48,8 +48,8 @@ func (r *mutationResolver) DeleteAssetCategory(ctx context.Context, input domain
 }
 
 // AssetCategories is the resolver for the assetCategories field.
-func (r *queryResolver) AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, reverse bool, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error) {
-	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey), reverse)
+func (r *queryResolver) AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create page param: %w", err)
 	}
