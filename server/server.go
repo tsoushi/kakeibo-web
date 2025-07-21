@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/gocraft/dbr/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -53,6 +54,10 @@ func main() {
 
 	r := chi.NewRouter()
 	graphQLRouter := chi.NewRouter()
+	graphQLRouter.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://*", "https://*"},
+		AllowedHeaders: []string{"Content-Type", "Debug-User-Name", "Debug-User-Password"},
+	}))
 	graphQLRouter.Use(middleware.MakeDebugAuth(repository))
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{

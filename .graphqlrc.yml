@@ -1,0 +1,2 @@
+schema: server/handler/graph/resolver/*.graphql
+documents: front/src/**/*.tsx
