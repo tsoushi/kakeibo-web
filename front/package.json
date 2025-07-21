@@ -13,8 +13,11 @@
   "dependencies": {
     "@urql/exchange-auth": "^2.2.1",
     "graphql": "^16.11.0",
+    "oidc-client-ts": "^3.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-oidc-context": "^3.3.0",
+    "typescript-cookie": "^1.0.6",
     "urql": "^4.2.2"
   },
   "devDependencies": {
