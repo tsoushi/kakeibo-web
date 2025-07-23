@@ -12,7 +12,7 @@ import { AuthGuard } from './AuthGuard.tsx'
 const cognitoAuthConfig: AuthProviderProps = {
   authority: import.meta.env.VITE_COGNITO_AUTHORITY,
   client_id: import.meta.env.VITE_COGNITO_CLIENT_ID,
-  redirect_uri: "http://localhost:5173/",
+  redirect_uri: import.meta.env.VITE_FRONT_URL,
   response_type: "code",
   scope: "email openid phone",
 }

@@ -1,7 +1,5 @@
 import { useQuery } from 'urql'
 import { graphql } from './gql/gql'
-import { useAuth } from 'react-oidc-context'
-import { User } from 'oidc-client-ts'
 
 const GetUserDocument = graphql(/* GraphQL */`
   query GetUser {
