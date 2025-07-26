@@ -13,16 +13,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// CreateUser is the resolver for the createUser field.
-func (r *mutationResolver) CreateUser(ctx context.Context, input domain.CreateUserInput) (*domain.User, error) {
-	user, err := r.usecase.CreateUser(ctx, input.Name, input.Password)
-	if err != nil {
-		return nil, xerrors.Errorf(": %w", err)
-	}
-
-	return user, nil
-}
-
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context) (*domain.User, error) {
 	userID, err := ctxdef.UserID(ctx)

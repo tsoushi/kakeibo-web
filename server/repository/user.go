@@ -51,7 +51,7 @@ func (r *UserRepository) GetByName(ctx context.Context, name string) (*domain.Us
 
 func (r *UserRepository) Insert(ctx context.Context, user *domain.User) (*domain.User, error) {
 	runner := getRunner(ctx, r.sess)
-	_, err := runner.InsertInto(usertableName).Columns("id", "name", "hashed_password").Record(user).Exec()
+	_, err := runner.InsertInto(usertableName).Columns("id", "name").Record(user).Exec()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to insert user: %w", err)
 	}

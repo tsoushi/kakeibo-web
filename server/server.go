@@ -70,7 +70,7 @@ func main() {
 		log.Fatalf("Failed to new CognitoValidator: %v", err)
 	}
 
-	graphQLRouter.Use(middleware.MakeCognitoAuth(cognitoValidator))
+	graphQLRouter.Use(middleware.MakeCognitoAuth(cognitoValidator, repository))
 	graphQLRouter.Use(middleware.MakeDebugAuth(repository))
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{

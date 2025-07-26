@@ -10,24 +10,18 @@ const (
 
 type UserID string
 
-func NewUserID() UserID {
-	return UserID(NewUUIDv4(UserIDSuffix))
-}
-
 type User struct {
-	ID             UserID
-	Name           string
-	HashedPassword HashedPassword
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID        UserID
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func NewUser(name string, hashedPassword HashedPassword) *User {
+func NewUser(id UserID, name string) *User {
 	return &User{
-		ID:             NewUserID(),
-		Name:           name,
-		HashedPassword: hashedPassword,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		ID:        id,
+		Name:      name,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }

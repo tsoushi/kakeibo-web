@@ -87,7 +87,6 @@ type ComplexityRoot struct {
 		CreateIncomeRecord   func(childComplexity int, input domain.CreateIncomeRecordInput) int
 		CreateTag            func(childComplexity int, input domain.CreateTagInput) int
 		CreateTransferRecord func(childComplexity int, input domain.CreateTransferRecordInput) int
-		CreateUser           func(childComplexity int, input domain.CreateUserInput) int
 		DeleteAssetCategory  func(childComplexity int, input domain.DeleteAssetCategoryInput) int
 		DeleteTag            func(childComplexity int, input domain.DeleteTagInput) int
 		Noop                 func(childComplexity int) int
@@ -162,7 +161,6 @@ type MutationResolver interface {
 	CreateTransferRecord(ctx context.Context, input domain.CreateTransferRecordInput) (*domain.Record, error)
 	CreateTag(ctx context.Context, input domain.CreateTagInput) (*domain.Tag, error)
 	DeleteTag(ctx context.Context, input domain.DeleteTagInput) (string, error)
-	CreateUser(ctx context.Context, input domain.CreateUserInput) (*domain.User, error)
 }
 type QueryResolver interface {
 	Void(ctx context.Context) (*string, error)
@@ -352,18 +350,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateTransferRecord(childComplexity, args["input"].(domain.CreateTransferRecordInput)), true
-
-	case "Mutation.createUser":
-		if e.complexity.Mutation.CreateUser == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createUser_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(domain.CreateUserInput)), true
 
 	case "Mutation.deleteAssetCategory":
 		if e.complexity.Mutation.DeleteAssetCategory == nil {
@@ -612,7 +598,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputcreateIncomeRecordInput,
 		ec.unmarshalInputcreateTagInput,
 		ec.unmarshalInputcreateTransferRecordInput,
-		ec.unmarshalInputcreateUserInput,
 		ec.unmarshalInputdeleteAssetCategoryInput,
 		ec.unmarshalInputdeleteTagInput,
 	)
@@ -874,29 +859,6 @@ func (ec *executionContext) field_Mutation_createTransferRecord_argsInput(
 	}
 
 	var zeroVal domain.CreateTransferRecordInput
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Mutation_createUser_argsInput(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Mutation_createUser_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (domain.CreateUserInput, error) {
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNcreateUserInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateUserInput(ctx, tmp)
-	}
-
-	var zeroVal domain.CreateUserInput
 	return zeroVal, nil
 }
 
@@ -2557,67 +2519,6 @@ func (ec *executionContext) fieldContext_Mutation_deleteTag(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_deleteTag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_createUser(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(domain.CreateUserInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*domain.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖkakeiboᚑwebᚑserverᚋdomainᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_createUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6225,40 +6126,6 @@ func (ec *executionContext) unmarshalInputcreateTransferRecordInput(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputcreateUserInput(ctx context.Context, obj any) (domain.CreateUserInput, error) {
-	var it domain.CreateUserInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"name", "password"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "name":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Name = data
-		case "password":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Password = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputdeleteAssetCategoryInput(ctx context.Context, obj any) (domain.DeleteAssetCategoryInput, error) {
 	var it domain.DeleteAssetCategoryInput
 	asMap := map[string]any{}
@@ -6742,13 +6609,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteTag":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteTag(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "createUser":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_createUser(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8458,11 +8318,6 @@ func (ec *executionContext) unmarshalNcreateTagInput2kakeiboᚑwebᚑserverᚋdo
 
 func (ec *executionContext) unmarshalNcreateTransferRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateTransferRecordInput(ctx context.Context, v any) (domain.CreateTransferRecordInput, error) {
 	res, err := ec.unmarshalInputcreateTransferRecordInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNcreateUserInput2kakeiboᚑwebᚑserverᚋdomainᚐCreateUserInput(ctx context.Context, v any) (domain.CreateUserInput, error) {
-	res, err := ec.unmarshalInputcreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
