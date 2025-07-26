@@ -1,53 +1,60 @@
 package middleware
 
 import (
-	"log"
+	"kakeibo-web-server/domain"
+	"kakeibo-web-server/lib/cognito"
+	"kakeibo-web-server/lib/ctxdef"
 	"net/http"
 	"strings"
-
-	"github.com/golang-jwt/jwt/v5"
 
 	"golang.org/x/xerrors"
 )
 
-var (
-	ErrUnauthorized = xerrors.New("unauthorized")
-)
+type CognitoAuthMiddleware struct {
+	next      http.Handler
+	validator *cognito.Validator
+}
 
-func FindToken(req *http.Request) (string, error) {
-	tokenString := req.Header.Get("Authorization")
-	if tokenString == "" {
-		return "", ErrUnauthorized
+func newCognitoAuthMiddleware(next http.Handler, validator *cognito.Validator) http.Handler {
+	return &CognitoAuthMiddleware{
+		next:      next,
+		validator: validator,
+	}
+}
+
+func (m *CognitoAuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	rawAuthorization := r.Header.Get("Authorization")
+
+	tokenString, err := extractTokenFromAuthorization(rawAuthorization)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	claims, err := m.validator.ValidateToken(tokenString)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx = ctxdef.WithUserID(ctx, domain.UserID(claims.Subject))
+
+	m.next.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func extractTokenFromAuthorization(rawAuthorization string) (string, error) {
 	const prefix = "Bearer "
-	if !strings.HasPrefix(h, prefix) {
-		return "", ErrUnauthorized
+	if !strings.HasPrefix(rawAuthorization, prefix) {
+		return "", xerrors.New("invalid authorization header format")
 	}
 
-	return strings.TrimPrefix(tokenString, prefix), nil
+	return strings.TrimPrefix(rawAuthorization, prefix), nil
 }
 
-type authenticatorClaims struct {
-	UserName string
-	jwt.RegisteredClaims
-}
-
-func ValidateToken(tokenString string) error {
-	var claims authenticatorClaims
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
-		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
-		return []byte("my_secret_key"), nil
-	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
-	if err != nil {
-		log.Fatal(err)
+func MakeCognitoAuth(validator *cognito.Validator) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return newCognitoAuthMiddleware(next, validator)
 	}
-
-	issuer, err := claims.GetIssuer()
-	if err != nil {
-
-	}
-
-	if issuer
-
 }

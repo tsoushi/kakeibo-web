@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/handler/graph/resolver"
 	"kakeibo-web-server/handler/middleware"
+	"kakeibo-web-server/lib/cognito"
 	"kakeibo-web-server/repository"
 	"kakeibo-web-server/usecase"
 	"log"
@@ -58,6 +60,17 @@ func main() {
 		AllowedOrigins: []string{"http://*", "https://*"},
 		AllowedHeaders: []string{"Content-Type", "Debug-User-Name", "Debug-User-Password"},
 	}))
+
+	cognitoCongig := cognito.Config{
+		Region:     os.Getenv("AWS_REGION"),
+		UserPoolID: os.Getenv("AWS_USER_POOL_ID"),
+	}
+	cognitoValidator, err := cognito.NewCognitoValidator(context.Background(), cognitoCongig)
+	if err != nil {
+		log.Fatalf("Failed to new CognitoValidator: %v", err)
+	}
+
+	graphQLRouter.Use(middleware.MakeCognitoAuth(cognitoValidator))
 	graphQLRouter.Use(middleware.MakeDebugAuth(repository))
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
