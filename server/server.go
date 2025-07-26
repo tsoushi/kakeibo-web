@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/handler/graph/resolver"
 	"kakeibo-web-server/handler/middleware"
+	"kakeibo-web-server/lib/cognito"
 	"kakeibo-web-server/repository"
 	"kakeibo-web-server/usecase"
 	"log"
@@ -56,8 +58,19 @@ func main() {
 	graphQLRouter := chi.NewRouter()
 	graphQLRouter.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"http://*", "https://*"},
-		AllowedHeaders: []string{"Content-Type", "Debug-User-Name", "Debug-User-Password"},
+		AllowedHeaders: []string{"Content-Type", "Debug-User-Name", "Debug-User-Password", "Authorization"},
 	}))
+
+	cognitoCongig := cognito.Config{
+		Region:     os.Getenv("AWS_COGNITO_REGION"),
+		UserPoolID: os.Getenv("AWS_COGNITO_USER_POOL_ID"),
+	}
+	cognitoValidator, err := cognito.NewCognitoValidator(context.Background(), cognitoCongig)
+	if err != nil {
+		log.Fatalf("Failed to new CognitoValidator: %v", err)
+	}
+
+	graphQLRouter.Use(middleware.MakeCognitoAuth(cognitoValidator))
 	graphQLRouter.Use(middleware.MakeDebugAuth(repository))
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
@@ -74,7 +87,6 @@ func main() {
 	srv.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})
-
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	graphQLRouter.Handle("/query", srv)
 	r.Handle("/query", graphQLRouter)

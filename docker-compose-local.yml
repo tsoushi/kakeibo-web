@@ -44,6 +44,8 @@ services:
       MYSQL_USERPASS: ${MYSQL_USERPASS} # MySQLのユーザーパスワード
       MYSQL_HOST: mysql # MySQLのホスト名
       MYSQL_PORT: ${MYSQL_PORT} # MySQLのポート番号
+      AWS_COGNITO_REGION: ${AWS_COGNITO_REGION} # cognitoのリージョン
+      AWS_COGNITO_USER_POOL_ID: ${AWS_COGNITO_USER_POOL_ID} # AWS CognitoのユーザープールID
     depends_on:
       mysql:
         condition: service_healthy
