@@ -74,7 +74,6 @@ func main() {
 	srv.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})
-
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	graphQLRouter.Handle("/query", srv)
 	r.Handle("/query", graphQLRouter)
