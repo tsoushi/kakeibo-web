@@ -37,8 +37,7 @@ const authConfig = async (utils: AuthUtilities): Promise<AuthConfig> => {
       }
 
       const op = utils.appendHeaders(operation, {
-        "Debug-User-Name": import.meta.env.VITE_DEBUG_USER_NAME,
-        "Debug-User-Password": import.meta.env.VITE_DEBUG_USER_PASSWORD,
+        Authorization: `Bearer ${user.access_token}`,
       })
       return op
     },

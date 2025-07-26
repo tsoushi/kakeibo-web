@@ -22,34 +22,24 @@ func newDebugAuthMiddleware(next http.Handler, repo *repository.Repository) http
 func (m *DebugAuthMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	userName := r.Header.Get("Debug-User-Name")
-	if userName == "" {
+	rawUserID := r.Header.Get("Debug-User-ID")
+	if rawUserID == "" {
 		m.next.ServeHTTP(w, r.WithContext(ctx))
 		return
 	}
 
-	password := r.Header.Get("Debug-User-Password")
+	userID := domain.UserID(rawUserID)
 
-	user, err := m.repo.User.GetByName(ctx, userName)
+	user, err := m.repo.User.GetByID(ctx, userID)
 	if err != nil {
 		if err == domain.ErrEntityNotFound {
-			http.Error(w, "Invalid user name or password", http.StatusUnauthorized)
+			http.Error(w, "User not found", http.StatusUnauthorized)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	ok, err := user.HashedPassword.Compare(password)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	if !ok {
-		http.Error(w, "Invalid user name or password", http.StatusUnauthorized)
-		return
-	}
-
-	ctx = ctxdef.WithUserID(ctx, domain.UserID(user.ID))
+	ctx = ctxdef.WithUserID(ctx, user.ID)
 
 	m.next.ServeHTTP(w, r.WithContext(ctx))
 }

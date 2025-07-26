@@ -19,16 +19,3 @@ func (u *Usecase) GetUserByID(ctx context.Context, id domain.UserID) (*domain.Us
 
 	return user, nil
 }
-
-func (u *Usecase) CreateUser(ctx context.Context, name, password string) (*domain.User, error) {
-	hashedPassword, err := domain.NewHashedPassword(password)
-	if err != nil {
-		return nil, xerrors.Errorf(": %w", err)
-	}
-	user, err := u.repo.User.Insert(ctx, domain.NewUser(name, hashedPassword))
-	if err != nil {
-		return nil, xerrors.Errorf(": %w", err)
-	}
-
-	return user, nil
-}
