@@ -11,12 +11,14 @@
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "@urql/exchange-auth": "^2.2.1",
     "graphql": "^16.11.0",
     "oidc-client-ts": "^3.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-oidc-context": "^3.3.0",
+    "react-router-dom": "^7.7.1",
     "urql": "^4.2.2"
   },
   "devDependencies": {
