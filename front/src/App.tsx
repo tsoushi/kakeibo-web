@@ -1,35 +1,35 @@
-import { useQuery } from 'urql'
-import { graphql } from './gql/gql'
+import { Route, Routes } from 'react-router-dom'
+import { useAuth } from 'react-oidc-context'
+import UserHome from './UserHome.tsx'
+import RecordPage from './Record.tsx'
 
-const GetUserDocument = graphql(/* GraphQL */`
-  query GetUser {
-    user {
-      id
-      name
-    }
-  }
-`)
 
 function App() {
-  const [result] = useQuery({ query: GetUserDocument })
+  const auth = useAuth()
 
-  const { data, fetching, error } = result
-  if (fetching) return <p>Loading...</p>
-  if (error) return <div>
-    <p>GraphQLError: {error.graphQLErrors.map(e => e.message).join(', ')}</p>
-  </div>
+  if (!auth.isAuthenticated && !auth.isLoading) {
+    auth.signinRedirect()
+    return <div>Redirecting to login...</div>
+  }
+  if (auth.isLoading) {
+    return <div>Loading authentication...</div>
+  }
+
+  const signOutRedirect = () => {
+    const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
+    const logoutUri = import.meta.env.VITE_FRONT_URL;
+    const cognitoDomain = import.meta.env.VITE_COGNITO_DOMAIN;
+    auth.signoutSilent()
+    window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+  };
 
   return (
     <div>
-      <h1>User Information</h1>
-      {data?.user ? (
-        <div>
-          <p>ID: {data.user.id}</p>
-          <p>Name: {data.user.name}</p>
-        </div>
-      ) : (
-        <p>No user data found.</p>
-      )}
+      <Routes>
+        <Route path="/" element={<UserHome />}></Route>
+        <Route path="/record" element={<RecordPage />}></Route>
+      </Routes>
+      <button onClick={() => signOutRedirect()}>Log Out</button>
     </div>
   )
 }
