@@ -1,6 +1,7 @@
 type AssetCategory {
     id: ID!
     name: String!
+    assets: [Asset!]!
 }
 
 type AssetCategoryConnection {
@@ -19,10 +20,16 @@ extend type Query {
 
 extend type Mutation {
     createAssetCategory(input: createAssetCategoryInput!): AssetCategory!
-    deleteAssetCategory(input: deleteAssetCategoryInput!): ID!
+    updateAssetCategory(input: updateAssetCategoryInput!): AssetCategory!
+    deleteAssetCategory(input: deleteAssetCategoryInput!): AssetCategory!
 }
 
 input createAssetCategoryInput {
+    name: String!
+}
+
+input updateAssetCategoryInput {
+    id: ID!
     name: String!
 }
 

@@ -35,6 +35,18 @@ func (r *TotalAssetsSnapshotRepository) Insert(ctx context.Context, snapshot *do
 	return snapshot, nil
 }
 
+func (r *TotalAssetsSnapshotRepository) InvalidateByUserIDAndSince(ctx context.Context, userID domain.UserID, since time.Time) error {
+	runner := getRunner(ctx, r.sess)
+	_, err := runner.Update(totalAssetsSnapshotTableName).
+		Set("is_valid", false).
+		Where("user_id = ? AND at >= ?", userID, since).
+		Exec()
+	if err != nil {
+		return xerrors.Errorf("failed to invalidate total assets snapshots: %w", err)
+	}
+	return nil
+}
+
 func (r *TotalAssetsSnapshotRepository) OptionalGetValidLatestByUserIDAndAssetIDAndBefore(ctx context.Context, userID domain.UserID, assetID *domain.AssetID, before time.Time) (*domain.TotalAssetsSnapshot, error) {
 	runner := getRunner(ctx, r.sess)
 	snapshot := &domain.TotalAssetsSnapshot{}

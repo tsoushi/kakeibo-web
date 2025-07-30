@@ -11,20 +11,26 @@ import (
 )
 
 type Loaders struct {
-	AssetCategoryLoader dataloader.Interface[domain.AssetCategoryID, *domain.AssetCategory]
-	AssetChangeLoader   dataloader.Interface[domain.RecordID, *AssetChangesAssociation]
-	AssetLoader         dataloader.Interface[domain.AssetID, *domain.Asset]
+	AssetCategoryLoader    dataloader.Interface[domain.AssetCategoryID, *domain.AssetCategory]
+	AssetChangeLoader      dataloader.Interface[domain.RecordID, *AssetChangesAssociation]
+	AssetLoader            dataloader.Interface[domain.AssetID, *domain.Asset]
+	AssetsByCategoryLoader dataloader.Interface[domain.AssetCategoryID, []*domain.Asset]
+	TagLoader              dataloader.Interface[domain.RecordID, []*domain.Tag]
 }
 
 func NewLoader(usecase *usecase.Usecase) *Loaders {
 	assetCategoryBatcher := &assetCategoryBatcher{usecase: usecase}
 	assetChangeBatcher := &assetChangeBatcher{usecase: usecase}
 	assetBatcher := &assetBatcher{usecase: usecase}
+	assetsByCategoryBatcher := &assetsByCategoryBatcher{usecase: usecase}
+	tagBatcher := &tagBatcher{usecase: usecase}
 
 	return &Loaders{
-		AssetCategoryLoader: dataloader.NewBatchedLoader(assetCategoryBatcher.BatchGetAssetCategories),
-		AssetChangeLoader:   dataloader.NewBatchedLoader(assetChangeBatcher.BatchGetAssetChanges),
-		AssetLoader:         dataloader.NewBatchedLoader(assetBatcher.BatchGetAssets),
+		AssetCategoryLoader:    dataloader.NewBatchedLoader(assetCategoryBatcher.BatchGetAssetCategories),
+		AssetChangeLoader:      dataloader.NewBatchedLoader(assetChangeBatcher.BatchGetAssetChanges),
+		AssetLoader:            dataloader.NewBatchedLoader(assetBatcher.BatchGetAssets),
+		AssetsByCategoryLoader: dataloader.NewBatchedLoader(assetsByCategoryBatcher.BatchGetAssetsByCategoryIDs),
+		TagLoader:              dataloader.NewBatchedLoader(tagBatcher.BatchGetTagsByRecordIDs),
 	}
 }
 

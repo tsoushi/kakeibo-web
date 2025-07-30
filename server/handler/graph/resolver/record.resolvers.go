@@ -10,6 +10,7 @@ import (
 	"kakeibo-web-server/handler/graph"
 	"kakeibo-web-server/lib/ctxdef"
 	"kakeibo-web-server/lib/typeutil"
+	"time"
 
 	"golang.org/x/xerrors"
 )
@@ -33,7 +34,7 @@ func (r *mutationResolver) CreateIncomeRecord(ctx context.Context, input domain.
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	record, _, err := r.usecase.CreateIncomeRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount)
+	record, _, err := r.usecase.CreateIncomeRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount, input.Tags)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -48,7 +49,7 @@ func (r *mutationResolver) CreateExpenseRecord(ctx context.Context, input domain
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	record, _, err := r.usecase.CreateExpenseRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount)
+	record, _, err := r.usecase.CreateExpenseRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount, input.Tags)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -63,7 +64,83 @@ func (r *mutationResolver) CreateTransferRecord(ctx context.Context, input domai
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	record, _, _, err := r.usecase.CreateTransferRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.FromAssetID), domain.AssetID(input.ToAssetID), input.Amount)
+	record, _, _, err := r.usecase.CreateTransferRecord(ctx, userID, input.Title, input.Description, input.At, domain.AssetID(input.FromAssetID), domain.AssetID(input.ToAssetID), input.Amount, input.Tags)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return record, nil
+}
+
+// UpdateIncomeRecord is the resolver for the updateIncomeRecord field.
+func (r *mutationResolver) UpdateIncomeRecord(ctx context.Context, input domain.UpdateIncomeRecordInput) (*domain.Record, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	record, err := r.usecase.UpdateIncomeRecord(ctx, userID, domain.RecordID(input.ID), input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount, input.Tags)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return record, nil
+}
+
+// UpdateExpenseRecord is the resolver for the updateExpenseRecord field.
+func (r *mutationResolver) UpdateExpenseRecord(ctx context.Context, input domain.UpdateExpenseRecordInput) (*domain.Record, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	record, err := r.usecase.UpdateExpenseRecord(ctx, userID, domain.RecordID(input.ID), input.Title, input.Description, input.At, domain.AssetID(input.AssetID), input.Amount, input.Tags)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return record, nil
+}
+
+// UpdateTransferRecord is the resolver for the updateTransferRecord field.
+func (r *mutationResolver) UpdateTransferRecord(ctx context.Context, input domain.UpdateTransferRecordInput) (*domain.Record, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	record, err := r.usecase.UpdateTransferRecord(ctx, userID, domain.RecordID(input.ID), input.Title, input.Description, input.At, domain.AssetID(input.FromAssetID), domain.AssetID(input.ToAssetID), input.Amount, input.Tags)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return record, nil
+}
+
+// DeleteRecord is the resolver for the deleteRecord field.
+func (r *mutationResolver) DeleteRecord(ctx context.Context, id string) (*domain.Record, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	recordID, err := r.usecase.DeleteRecord(ctx, userID, domain.RecordID(id))
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return &domain.Record{
+		ID: recordID,
+	}, nil
+}
+
+// Record is the resolver for the record field.
+func (r *queryResolver) Record(ctx context.Context, id string) (*domain.Record, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+	record, err := r.usecase.GetRecordByID(ctx, userID, domain.RecordID(id))
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -98,7 +175,56 @@ func (r *queryResolver) Records(ctx context.Context, assetID *string, sortKey do
 		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	initTotalAssetAmount, err := r.usecase.CulcTotalAssetAmountAndCreateSnapshot(ctx, userID, assetIDPtr, *oldestRecord)
+	initTotalAssetAmount, err := r.usecase.CulcTotalAssetAmountAndCreateSnapshot(ctx, userID, assetIDPtr, oldestRecord.At, oldestRecord.ID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return &domain.RecordConnection{
+		Nodes:       records,
+		PageInfo:    pageInfo,
+		TotalAssets: initTotalAssetAmount,
+	}, nil
+}
+
+// RecordsPerMonth is the resolver for the recordsPerMonth field.
+func (r *queryResolver) RecordsPerMonth(ctx context.Context, year int, month int, tagNames []string, assetIds []string, recordTypes []domain.RecordType, sortkey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error) {
+	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortkey))
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	argAssetIDs := make([]domain.AssetID, 0, len(assetIds))
+	for _, assetID := range assetIds {
+		argAssetIDs = append(argAssetIDs, domain.AssetID(assetID))
+	}
+
+	records, pageInfo, err := r.usecase.GetRecordsPerMonth(ctx, pageParam, userID, year, month, tagNames, argAssetIDs, recordTypes)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	var cultTotalAssetBefore time.Time
+	var culcTotalAssetRecordID domain.RecordID
+
+	if len(records) > 0 {
+		oldestRecord, err := records.OldestRecord(pageParam.IsReverse())
+		if err != nil {
+			return nil, xerrors.Errorf(": %w", err)
+		}
+		cultTotalAssetBefore = oldestRecord.At
+		culcTotalAssetRecordID = oldestRecord.ID
+	} else {
+		cultTotalAssetBefore = time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.Local)
+		culcTotalAssetRecordID = domain.RecordID("")
+	}
+
+	initTotalAssetAmount, err := r.usecase.CulcTotalAssetAmountAndCreateSnapshot(ctx, userID, nil, cultTotalAssetBefore, culcTotalAssetRecordID)
 	if err != nil {
 		return nil, xerrors.Errorf(": %w", err)
 	}
@@ -128,7 +254,7 @@ func (r *recordResolver) AssetChangeIncome(ctx context.Context, obj *domain.Reco
 	}
 
 	if assetChangesAssociation.AssetChangeIncome == nil {
-		return nil, domain.ErrAssetChangeNotFound
+		return nil, xerrors.Errorf("AssetChange Income not found: %w", domain.ErrAssetChangeNotFound)
 	}
 
 	return assetChangesAssociation.AssetChangeIncome, nil
@@ -148,10 +274,26 @@ func (r *recordResolver) AssetChangeExpense(ctx context.Context, obj *domain.Rec
 	}
 
 	if assetChangesAssociation.AssetChangeExpense == nil {
-		return nil, domain.ErrAssetChangeNotFound
+		return nil, xerrors.Errorf("AssetChange Expense not found: %w", domain.ErrAssetChangeNotFound)
 	}
 
 	return assetChangesAssociation.AssetChangeExpense, nil
+}
+
+// Tags is the resolver for the tags field.
+func (r *recordResolver) Tags(ctx context.Context, obj *domain.Record) ([]*domain.Tag, error) {
+	thunk := r.Loaders.TagLoader.Load(ctx, obj.ID)
+
+	tags, err := thunk()
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	if tags == nil {
+		return nil, domain.ErrEntityNotFound
+	}
+
+	return tags, nil
 }
 
 // AssetChange returns graph.AssetChangeResolver implementation.

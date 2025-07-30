@@ -34,6 +34,26 @@ func (r *TagRepository) Insert(cxt context.Context, tag *domain.Tag) (*domain.Ta
 	return tag, nil
 }
 
+func (r *TagRepository) Update(ctx context.Context, tag *domain.Tag) (*domain.Tag, error) {
+	runner := getRunner(ctx, r.sess)
+	result, err := runner.Update(tagtableName).
+		Set("name", tag.Name).
+		Where("id = ? AND user_id = ?", tag.ID, tag.UserID).
+		Exec()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to update tag: %w", err)
+	}
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return nil, domain.ErrEntityNotFound
+	}
+
+	return tag, nil
+}
+
 func (r *TagRepository) GetMultiByUserID(ctx context.Context, pageParam *domain.PageParam, userID domain.UserID) ([]*domain.Tag, *domain.PageInfo, error) {
 	runner := getRunner(ctx, r.sess)
 	stmt := runner.Select("*").From(tagtableName).Where(dbr.Eq("user_id", userID))
@@ -93,4 +113,45 @@ func (r *TagRepository) Delete(ctx context.Context, userID domain.UserID, tagID 
 	}
 
 	return tagID, nil
+}
+
+func (r *TagRepository) GetMultiByNames(ctx context.Context, userID domain.UserID, names []string) (domain.Tags, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+
+	runner := getRunner(ctx, r.sess)
+	tags := make([]*domain.Tag, 0, len(names))
+
+	_, err := runner.Select("*").From(tagtableName).
+		Where(dbr.Eq("user_id", userID)).
+		Where("name IN ?", names).
+		LoadContext(ctx, &tags)
+
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load tags by names: %w", err)
+	}
+
+	return tags, nil
+}
+
+func (r *TagRepository) GetMultiWithRecordIDByRecordIDs(ctx context.Context, userID domain.UserID, recordIDs []domain.RecordID) ([]*domain.TagWithRecordID, error) {
+	if len(recordIDs) == 0 {
+		return nil, nil
+	}
+
+	runner := getRunner(ctx, r.sess)
+	tagWithRecordIDs := make([]*domain.TagWithRecordID, 0)
+
+	_, err := runner.Select("rt.record_id, t.*").From(dbr.I(recordTagTableName).As("rt")).
+		Join(dbr.I(tagtableName).As("t"), "t.id = rt.tag_id").
+		Where(dbr.Eq("t.user_id", userID)).
+		Where("rt.record_id IN ?", recordIDs).
+		LoadContext(ctx, &tagWithRecordIDs)
+
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load tags by record IDs: %w", err)
+	}
+
+	return tagWithRecordIDs, nil
 }

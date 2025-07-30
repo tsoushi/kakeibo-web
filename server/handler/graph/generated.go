@@ -61,8 +61,9 @@ type ComplexityRoot struct {
 	}
 
 	AssetCategory struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		Assets func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Name   func(childComplexity int) int
 	}
 
 	AssetCategoryConnection struct {
@@ -87,9 +88,17 @@ type ComplexityRoot struct {
 		CreateIncomeRecord   func(childComplexity int, input domain.CreateIncomeRecordInput) int
 		CreateTag            func(childComplexity int, input domain.CreateTagInput) int
 		CreateTransferRecord func(childComplexity int, input domain.CreateTransferRecordInput) int
+		DeleteAsset          func(childComplexity int, id string) int
 		DeleteAssetCategory  func(childComplexity int, input domain.DeleteAssetCategoryInput) int
+		DeleteRecord         func(childComplexity int, id string) int
 		DeleteTag            func(childComplexity int, input domain.DeleteTagInput) int
 		Noop                 func(childComplexity int) int
+		UpdateAsset          func(childComplexity int, input domain.UpdateAssetInput) int
+		UpdateAssetCategory  func(childComplexity int, input domain.UpdateAssetCategoryInput) int
+		UpdateExpenseRecord  func(childComplexity int, input domain.UpdateExpenseRecordInput) int
+		UpdateIncomeRecord   func(childComplexity int, input domain.UpdateIncomeRecordInput) int
+		UpdateTag            func(childComplexity int, input domain.UpdateTagInput) int
+		UpdateTransferRecord func(childComplexity int, input domain.UpdateTransferRecordInput) int
 	}
 
 	PageInfo struct {
@@ -102,7 +111,9 @@ type ComplexityRoot struct {
 	Query struct {
 		AssetCategories func(childComplexity int, sortKey domain.AssetCategorySortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
 		Assets          func(childComplexity int, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		Record          func(childComplexity int, id string) int
 		Records         func(childComplexity int, assetID *string, sortKey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
+		RecordsPerMonth func(childComplexity int, year int, month int, tagNames []string, assetIds []string, recordTypes []domain.RecordType, sortkey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
 		Tags            func(childComplexity int, sortKey domain.TagSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) int
 		User            func(childComplexity int) int
 		Void            func(childComplexity int) int
@@ -115,6 +126,7 @@ type ComplexityRoot struct {
 		Description        func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		RecordType         func(childComplexity int) int
+		Tags               func(childComplexity int) int
 		Title              func(childComplexity int) int
 	}
 
@@ -147,6 +159,8 @@ type AssetResolver interface {
 }
 type AssetCategoryResolver interface {
 	ID(ctx context.Context, obj *domain.AssetCategory) (string, error)
+
+	Assets(ctx context.Context, obj *domain.AssetCategory) ([]*domain.Asset, error)
 }
 type AssetChangeResolver interface {
 	Asset(ctx context.Context, obj *domain.AssetChange) (*domain.Asset, error)
@@ -154,19 +168,29 @@ type AssetChangeResolver interface {
 type MutationResolver interface {
 	Noop(ctx context.Context) (*bool, error)
 	CreateAsset(ctx context.Context, input domain.CreateAssetInput) (*domain.Asset, error)
+	UpdateAsset(ctx context.Context, input domain.UpdateAssetInput) (*domain.Asset, error)
+	DeleteAsset(ctx context.Context, id string) (*domain.Asset, error)
 	CreateAssetCategory(ctx context.Context, input domain.CreateAssetCategoryInput) (*domain.AssetCategory, error)
-	DeleteAssetCategory(ctx context.Context, input domain.DeleteAssetCategoryInput) (string, error)
+	UpdateAssetCategory(ctx context.Context, input domain.UpdateAssetCategoryInput) (*domain.AssetCategory, error)
+	DeleteAssetCategory(ctx context.Context, input domain.DeleteAssetCategoryInput) (*domain.AssetCategory, error)
 	CreateIncomeRecord(ctx context.Context, input domain.CreateIncomeRecordInput) (*domain.Record, error)
 	CreateExpenseRecord(ctx context.Context, input domain.CreateExpenseRecordInput) (*domain.Record, error)
 	CreateTransferRecord(ctx context.Context, input domain.CreateTransferRecordInput) (*domain.Record, error)
+	UpdateIncomeRecord(ctx context.Context, input domain.UpdateIncomeRecordInput) (*domain.Record, error)
+	UpdateExpenseRecord(ctx context.Context, input domain.UpdateExpenseRecordInput) (*domain.Record, error)
+	UpdateTransferRecord(ctx context.Context, input domain.UpdateTransferRecordInput) (*domain.Record, error)
+	DeleteRecord(ctx context.Context, id string) (*domain.Record, error)
 	CreateTag(ctx context.Context, input domain.CreateTagInput) (*domain.Tag, error)
-	DeleteTag(ctx context.Context, input domain.DeleteTagInput) (string, error)
+	UpdateTag(ctx context.Context, input domain.UpdateTagInput) (*domain.Tag, error)
+	DeleteTag(ctx context.Context, input domain.DeleteTagInput) (*domain.Tag, error)
 }
 type QueryResolver interface {
 	Void(ctx context.Context) (*string, error)
 	Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error)
 	AssetCategories(ctx context.Context, sortKey domain.AssetCategorySortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetCategoryConnection, error)
+	Record(ctx context.Context, id string) (*domain.Record, error)
 	Records(ctx context.Context, assetID *string, sortKey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error)
+	RecordsPerMonth(ctx context.Context, year int, month int, tagNames []string, assetIds []string, recordTypes []domain.RecordType, sortkey domain.RecordSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.RecordConnection, error)
 	Tags(ctx context.Context, sortKey domain.TagSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.TagConnection, error)
 	User(ctx context.Context) (*domain.User, error)
 }
@@ -175,6 +199,7 @@ type RecordResolver interface {
 
 	AssetChangeIncome(ctx context.Context, obj *domain.Record) (*domain.AssetChange, error)
 	AssetChangeExpense(ctx context.Context, obj *domain.Record) (*domain.AssetChange, error)
+	Tags(ctx context.Context, obj *domain.Record) ([]*domain.Tag, error)
 }
 type TagResolver interface {
 	ID(ctx context.Context, obj *domain.Tag) (string, error)
@@ -222,6 +247,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Asset.Name(childComplexity), true
+
+	case "AssetCategory.assets":
+		if e.complexity.AssetCategory.Assets == nil {
+			break
+		}
+
+		return e.complexity.AssetCategory.Assets(childComplexity), true
 
 	case "AssetCategory.id":
 		if e.complexity.AssetCategory.ID == nil {
@@ -351,6 +383,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateTransferRecord(childComplexity, args["input"].(domain.CreateTransferRecordInput)), true
 
+	case "Mutation.deleteAsset":
+		if e.complexity.Mutation.DeleteAsset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteAsset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteAsset(childComplexity, args["id"].(string)), true
+
 	case "Mutation.deleteAssetCategory":
 		if e.complexity.Mutation.DeleteAssetCategory == nil {
 			break
@@ -362,6 +406,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteAssetCategory(childComplexity, args["input"].(domain.DeleteAssetCategoryInput)), true
+
+	case "Mutation.deleteRecord":
+		if e.complexity.Mutation.DeleteRecord == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteRecord_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteRecord(childComplexity, args["id"].(string)), true
 
 	case "Mutation.deleteTag":
 		if e.complexity.Mutation.DeleteTag == nil {
@@ -381,6 +437,78 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.Noop(childComplexity), true
+
+	case "Mutation.updateAsset":
+		if e.complexity.Mutation.UpdateAsset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateAsset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateAsset(childComplexity, args["input"].(domain.UpdateAssetInput)), true
+
+	case "Mutation.updateAssetCategory":
+		if e.complexity.Mutation.UpdateAssetCategory == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateAssetCategory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateAssetCategory(childComplexity, args["input"].(domain.UpdateAssetCategoryInput)), true
+
+	case "Mutation.updateExpenseRecord":
+		if e.complexity.Mutation.UpdateExpenseRecord == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateExpenseRecord_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateExpenseRecord(childComplexity, args["input"].(domain.UpdateExpenseRecordInput)), true
+
+	case "Mutation.updateIncomeRecord":
+		if e.complexity.Mutation.UpdateIncomeRecord == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateIncomeRecord_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateIncomeRecord(childComplexity, args["input"].(domain.UpdateIncomeRecordInput)), true
+
+	case "Mutation.updateTag":
+		if e.complexity.Mutation.UpdateTag == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTag_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTag(childComplexity, args["input"].(domain.UpdateTagInput)), true
+
+	case "Mutation.updateTransferRecord":
+		if e.complexity.Mutation.UpdateTransferRecord == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTransferRecord_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTransferRecord(childComplexity, args["input"].(domain.UpdateTransferRecordInput)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -434,6 +562,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Assets(childComplexity, args["categoryID"].(*string), args["sortKey"].(domain.AssetSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
+	case "Query.record":
+		if e.complexity.Query.Record == nil {
+			break
+		}
+
+		args, err := ec.field_Query_record_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Record(childComplexity, args["id"].(string)), true
+
 	case "Query.records":
 		if e.complexity.Query.Records == nil {
 			break
@@ -445,6 +585,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Records(childComplexity, args["assetID"].(*string), args["sortKey"].(domain.RecordSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
+
+	case "Query.recordsPerMonth":
+		if e.complexity.Query.RecordsPerMonth == nil {
+			break
+		}
+
+		args, err := ec.field_Query_recordsPerMonth_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RecordsPerMonth(childComplexity, args["year"].(int), args["month"].(int), args["tagNames"].([]string), args["assetIds"].([]string), args["recordTypes"].([]domain.RecordType), args["sortkey"].(domain.RecordSortKey), args["first"].(*int), args["after"].(*domain.PageCursor), args["last"].(*int), args["before"].(*domain.PageCursor)), true
 
 	case "Query.tags":
 		if e.complexity.Query.Tags == nil {
@@ -513,6 +665,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Record.RecordType(childComplexity), true
+
+	case "Record.tags":
+		if e.complexity.Record.Tags == nil {
+			break
+		}
+
+		return e.complexity.Record.Tags(childComplexity), true
 
 	case "Record.title":
 		if e.complexity.Record.Title == nil {
@@ -600,6 +759,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputcreateTransferRecordInput,
 		ec.unmarshalInputdeleteAssetCategoryInput,
 		ec.unmarshalInputdeleteTagInput,
+		ec.unmarshalInputupdateAssetCategoryInput,
+		ec.unmarshalInputupdateAssetInput,
+		ec.unmarshalInputupdateExpenseRecordInput,
+		ec.unmarshalInputupdateIncomeRecordInput,
+		ec.unmarshalInputupdateTagInput,
+		ec.unmarshalInputupdateTransferRecordInput,
 	)
 	first := true
 
@@ -885,6 +1050,52 @@ func (ec *executionContext) field_Mutation_deleteAssetCategory_argsInput(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteAsset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteAsset_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteAsset_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteRecord_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteRecord_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteRecord_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteTag_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -905,6 +1116,144 @@ func (ec *executionContext) field_Mutation_deleteTag_argsInput(
 	}
 
 	var zeroVal domain.DeleteTagInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateAssetCategory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateAssetCategory_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateAssetCategory_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateAssetCategoryInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateAssetCategoryInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateAssetCategoryInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateAssetCategoryInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateAsset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateAsset_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateAsset_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateAssetInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateAssetInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateAssetInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateAssetInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateExpenseRecord_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateExpenseRecord_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateExpenseRecord_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateExpenseRecordInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateExpenseRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateExpenseRecordInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateExpenseRecordInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateIncomeRecord_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateIncomeRecord_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateIncomeRecord_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateIncomeRecordInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateIncomeRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateIncomeRecordInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateIncomeRecordInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTag_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateTag_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateTag_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateTagInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateTagInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateTagInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateTagInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateTransferRecord_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateTransferRecord_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateTransferRecord_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.UpdateTransferRecordInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNupdateTransferRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateTransferRecordInput(ctx, tmp)
+	}
+
+	var zeroVal domain.UpdateTransferRecordInput
 	return zeroVal, nil
 }
 
@@ -1127,6 +1476,214 @@ func (ec *executionContext) field_Query_assets_argsLast(
 }
 
 func (ec *executionContext) field_Query_assets_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_record_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_record_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_record_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_recordsPerMonth_argsYear(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["year"] = arg0
+	arg1, err := ec.field_Query_recordsPerMonth_argsMonth(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["month"] = arg1
+	arg2, err := ec.field_Query_recordsPerMonth_argsTagNames(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["tagNames"] = arg2
+	arg3, err := ec.field_Query_recordsPerMonth_argsAssetIds(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["assetIds"] = arg3
+	arg4, err := ec.field_Query_recordsPerMonth_argsRecordTypes(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["recordTypes"] = arg4
+	arg5, err := ec.field_Query_recordsPerMonth_argsSortkey(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sortkey"] = arg5
+	arg6, err := ec.field_Query_recordsPerMonth_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg6
+	arg7, err := ec.field_Query_recordsPerMonth_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg7
+	arg8, err := ec.field_Query_recordsPerMonth_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg8
+	arg9, err := ec.field_Query_recordsPerMonth_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg9
+	return args, nil
+}
+func (ec *executionContext) field_Query_recordsPerMonth_argsYear(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("year"))
+	if tmp, ok := rawArgs["year"]; ok {
+		return ec.unmarshalNInt2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsMonth(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("month"))
+	if tmp, ok := rawArgs["month"]; ok {
+		return ec.unmarshalNInt2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsTagNames(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("tagNames"))
+	if tmp, ok := rawArgs["tagNames"]; ok {
+		return ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsAssetIds(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("assetIds"))
+	if tmp, ok := rawArgs["assetIds"]; ok {
+		return ec.unmarshalOID2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsRecordTypes(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]domain.RecordType, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("recordTypes"))
+	if tmp, ok := rawArgs["recordTypes"]; ok {
+		return ec.unmarshalORecordType2ᚕkakeiboᚑwebᚑserverᚋdomainᚐRecordTypeᚄ(ctx, tmp)
+	}
+
+	var zeroVal []domain.RecordType
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsSortkey(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (domain.RecordSortKey, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sortkey"))
+	if tmp, ok := rawArgs["sortkey"]; ok {
+		return ec.unmarshalNRecordSortKey2kakeiboᚑwebᚑserverᚋdomainᚐRecordSortKey(ctx, tmp)
+	}
+
+	var zeroVal domain.RecordSortKey
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*domain.PageCursor, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomainᚐPageCursor(ctx, tmp)
+	}
+
+	var zeroVal *domain.PageCursor
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_recordsPerMonth_argsBefore(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*domain.PageCursor, error) {
@@ -1575,6 +2132,8 @@ func (ec *executionContext) fieldContext_Asset_category(_ context.Context, field
 				return ec.fieldContext_AssetCategory_id(ctx, field)
 			case "name":
 				return ec.fieldContext_AssetCategory_name(ctx, field)
+			case "assets":
+				return ec.fieldContext_AssetCategory_assets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
 		},
@@ -1670,6 +2229,58 @@ func (ec *executionContext) fieldContext_AssetCategory_name(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _AssetCategory_assets(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssetCategory_assets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AssetCategory().Assets(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssetCategory_assets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssetCategory",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Asset_category(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AssetCategoryConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *domain.AssetCategoryConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AssetCategoryConnection_nodes(ctx, field)
 	if err != nil {
@@ -1713,6 +2324,8 @@ func (ec *executionContext) fieldContext_AssetCategoryConnection_nodes(_ context
 				return ec.fieldContext_AssetCategory_id(ctx, field)
 			case "name":
 				return ec.fieldContext_AssetCategory_name(ctx, field)
+			case "assets":
+				return ec.fieldContext_AssetCategory_assets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
 		},
@@ -2080,6 +2693,132 @@ func (ec *executionContext) fieldContext_Mutation_createAsset(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateAsset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateAsset(rctx, fc.Args["input"].(domain.UpdateAssetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Asset_category(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateAsset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteAsset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteAsset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteAsset(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteAsset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "category":
+				return ec.fieldContext_Asset_category(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteAsset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createAssetCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_createAssetCategory(ctx, field)
 	if err != nil {
@@ -2123,6 +2862,8 @@ func (ec *executionContext) fieldContext_Mutation_createAssetCategory(ctx contex
 				return ec.fieldContext_AssetCategory_id(ctx, field)
 			case "name":
 				return ec.fieldContext_AssetCategory_name(ctx, field)
+			case "assets":
+				return ec.fieldContext_AssetCategory_assets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
 		},
@@ -2135,6 +2876,69 @@ func (ec *executionContext) fieldContext_Mutation_createAssetCategory(ctx contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createAssetCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateAssetCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateAssetCategory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateAssetCategory(rctx, fc.Args["input"].(domain.UpdateAssetCategoryInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.AssetCategory)
+	fc.Result = res
+	return ec.marshalNAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateAssetCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssetCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AssetCategory_name(ctx, field)
+			case "assets":
+				return ec.fieldContext_AssetCategory_assets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateAssetCategory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2167,9 +2971,9 @@ func (ec *executionContext) _Mutation_deleteAssetCategory(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*domain.AssetCategory)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteAssetCategory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2179,7 +2983,15 @@ func (ec *executionContext) fieldContext_Mutation_deleteAssetCategory(ctx contex
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssetCategory_id(ctx, field)
+			case "name":
+				return ec.fieldContext_AssetCategory_name(ctx, field)
+			case "assets":
+				return ec.fieldContext_AssetCategory_assets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssetCategory", field.Name)
 		},
 	}
 	defer func() {
@@ -2249,6 +3061,8 @@ func (ec *executionContext) fieldContext_Mutation_createIncomeRecord(ctx context
 				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
 			case "assetChangeExpense":
 				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
 		},
@@ -2320,6 +3134,8 @@ func (ec *executionContext) fieldContext_Mutation_createExpenseRecord(ctx contex
 				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
 			case "assetChangeExpense":
 				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
 		},
@@ -2391,6 +3207,8 @@ func (ec *executionContext) fieldContext_Mutation_createTransferRecord(ctx conte
 				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
 			case "assetChangeExpense":
 				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
 		},
@@ -2403,6 +3221,298 @@ func (ec *executionContext) fieldContext_Mutation_createTransferRecord(ctx conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createTransferRecord_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateIncomeRecord(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateIncomeRecord(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateIncomeRecord(rctx, fc.Args["input"].(domain.UpdateIncomeRecordInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateIncomeRecord(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Record_id(ctx, field)
+			case "recordType":
+				return ec.fieldContext_Record_recordType(ctx, field)
+			case "title":
+				return ec.fieldContext_Record_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Record_description(ctx, field)
+			case "at":
+				return ec.fieldContext_Record_at(ctx, field)
+			case "assetChangeIncome":
+				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
+			case "assetChangeExpense":
+				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateIncomeRecord_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateExpenseRecord(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateExpenseRecord(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateExpenseRecord(rctx, fc.Args["input"].(domain.UpdateExpenseRecordInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateExpenseRecord(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Record_id(ctx, field)
+			case "recordType":
+				return ec.fieldContext_Record_recordType(ctx, field)
+			case "title":
+				return ec.fieldContext_Record_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Record_description(ctx, field)
+			case "at":
+				return ec.fieldContext_Record_at(ctx, field)
+			case "assetChangeIncome":
+				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
+			case "assetChangeExpense":
+				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateExpenseRecord_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateTransferRecord(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateTransferRecord(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateTransferRecord(rctx, fc.Args["input"].(domain.UpdateTransferRecordInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateTransferRecord(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Record_id(ctx, field)
+			case "recordType":
+				return ec.fieldContext_Record_recordType(ctx, field)
+			case "title":
+				return ec.fieldContext_Record_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Record_description(ctx, field)
+			case "at":
+				return ec.fieldContext_Record_at(ctx, field)
+			case "assetChangeIncome":
+				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
+			case "assetChangeExpense":
+				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateTransferRecord_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteRecord(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteRecord(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteRecord(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteRecord(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Record_id(ctx, field)
+			case "recordType":
+				return ec.fieldContext_Record_recordType(ctx, field)
+			case "title":
+				return ec.fieldContext_Record_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Record_description(ctx, field)
+			case "at":
+				return ec.fieldContext_Record_at(ctx, field)
+			case "assetChangeIncome":
+				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
+			case "assetChangeExpense":
+				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteRecord_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2470,6 +3580,67 @@ func (ec *executionContext) fieldContext_Mutation_createTag(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateTag(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateTag(rctx, fc.Args["input"].(domain.UpdateTagInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Tag)
+	fc.Result = res
+	return ec.marshalNTag2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateTag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteTag(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_deleteTag(ctx, field)
 	if err != nil {
@@ -2496,9 +3667,9 @@ func (ec *executionContext) _Mutation_deleteTag(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*domain.Tag)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNTag2ᚖkakeiboᚑwebᚑserverᚋdomainᚐTag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteTag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2508,7 +3679,13 @@ func (ec *executionContext) fieldContext_Mutation_deleteTag(ctx context.Context,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
 	}
 	defer func() {
@@ -2858,6 +4035,79 @@ func (ec *executionContext) fieldContext_Query_assetCategories(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_record(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_record(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Record(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Record)
+	fc.Result = res
+	return ec.marshalNRecord2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecord(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_record(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Record_id(ctx, field)
+			case "recordType":
+				return ec.fieldContext_Record_recordType(ctx, field)
+			case "title":
+				return ec.fieldContext_Record_title(ctx, field)
+			case "description":
+				return ec.fieldContext_Record_description(ctx, field)
+			case "at":
+				return ec.fieldContext_Record_at(ctx, field)
+			case "assetChangeIncome":
+				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
+			case "assetChangeExpense":
+				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_record_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_records(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_records(ctx, field)
 	if err != nil {
@@ -2915,6 +4165,69 @@ func (ec *executionContext) fieldContext_Query_records(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_records_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_recordsPerMonth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_recordsPerMonth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RecordsPerMonth(rctx, fc.Args["year"].(int), fc.Args["month"].(int), fc.Args["tagNames"].([]string), fc.Args["assetIds"].([]string), fc.Args["recordTypes"].([]domain.RecordType), fc.Args["sortkey"].(domain.RecordSortKey), fc.Args["first"].(*int), fc.Args["after"].(*domain.PageCursor), fc.Args["last"].(*int), fc.Args["before"].(*domain.PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.RecordConnection)
+	fc.Result = res
+	return ec.marshalNRecordConnection2ᚖkakeiboᚑwebᚑserverᚋdomainᚐRecordConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_recordsPerMonth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodes":
+				return ec.fieldContext_RecordConnection_nodes(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_RecordConnection_pageInfo(ctx, field)
+			case "totalAssets":
+				return ec.fieldContext_RecordConnection_totalAssets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RecordConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_recordsPerMonth_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3477,6 +4790,56 @@ func (ec *executionContext) fieldContext_Record_assetChangeExpense(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Record_tags(ctx context.Context, field graphql.CollectedField, obj *domain.Record) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Record_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Record().Tags(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.Tag)
+	fc.Result = res
+	return ec.marshalNTag2ᚕᚖkakeiboᚑwebᚑserverᚋdomainᚐTagᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Record_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Record",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tag_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tag_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RecordConnection_nodes(ctx context.Context, field graphql.CollectedField, obj *domain.RecordConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RecordConnection_nodes(ctx, field)
 	if err != nil {
@@ -3530,6 +4893,8 @@ func (ec *executionContext) fieldContext_RecordConnection_nodes(_ context.Contex
 				return ec.fieldContext_Record_assetChangeIncome(ctx, field)
 			case "assetChangeExpense":
 				return ec.fieldContext_Record_assetChangeExpense(ctx, field)
+			case "tags":
+				return ec.fieldContext_Record_tags(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Record", field.Name)
 		},
@@ -5934,7 +7299,7 @@ func (ec *executionContext) unmarshalInputcreateExpenseRecordInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "at", "assetID", "amount"}
+	fieldsInOrder := [...]string{"title", "description", "at", "assetID", "amount", "tags"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5976,6 +7341,13 @@ func (ec *executionContext) unmarshalInputcreateExpenseRecordInput(ctx context.C
 				return it, err
 			}
 			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
 		}
 	}
 
@@ -5989,7 +7361,7 @@ func (ec *executionContext) unmarshalInputcreateIncomeRecordInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "at", "assetID", "amount"}
+	fieldsInOrder := [...]string{"title", "description", "at", "assetID", "amount", "tags"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6031,6 +7403,13 @@ func (ec *executionContext) unmarshalInputcreateIncomeRecordInput(ctx context.Co
 				return it, err
 			}
 			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
 		}
 	}
 
@@ -6071,7 +7450,7 @@ func (ec *executionContext) unmarshalInputcreateTransferRecordInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "description", "at", "fromAssetID", "toAssetID", "amount"}
+	fieldsInOrder := [...]string{"title", "description", "at", "fromAssetID", "toAssetID", "amount", "tags"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6120,6 +7499,13 @@ func (ec *executionContext) unmarshalInputcreateTransferRecordInput(ctx context.
 				return it, err
 			}
 			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
 		}
 	}
 
@@ -6174,6 +7560,329 @@ func (ec *executionContext) unmarshalInputdeleteTagInput(ctx context.Context, ob
 				return it, err
 			}
 			it.ID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateAssetCategoryInput(ctx context.Context, obj any) (domain.UpdateAssetCategoryInput, error) {
+	var it domain.UpdateAssetCategoryInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateAssetInput(ctx context.Context, obj any) (domain.UpdateAssetInput, error) {
+	var it domain.UpdateAssetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "categoryId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "categoryId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CategoryID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateExpenseRecordInput(ctx context.Context, obj any) (domain.UpdateExpenseRecordInput, error) {
+	var it domain.UpdateExpenseRecordInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "title", "description", "at", "assetID", "amount", "tags"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "at":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("at"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.At = data
+		case "assetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AssetID = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateIncomeRecordInput(ctx context.Context, obj any) (domain.UpdateIncomeRecordInput, error) {
+	var it domain.UpdateIncomeRecordInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "title", "description", "at", "assetID", "amount", "tags"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "at":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("at"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.At = data
+		case "assetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AssetID = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateTagInput(ctx context.Context, obj any) (domain.UpdateTagInput, error) {
+	var it domain.UpdateTagInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputupdateTransferRecordInput(ctx context.Context, obj any) (domain.UpdateTransferRecordInput, error) {
+	var it domain.UpdateTransferRecordInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "title", "description", "at", "fromAssetID", "toAssetID", "amount", "tags"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "at":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("at"))
+			data, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.At = data
+		case "fromAssetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromAssetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FromAssetID = data
+		case "toAssetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toAssetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ToAssetID = data
+		case "amount":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Amount = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
 		}
 	}
 
@@ -6348,6 +8057,42 @@ func (ec *executionContext) _AssetCategory(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "assets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AssetCategory_assets(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6564,9 +8309,30 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateAsset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateAsset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteAsset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteAsset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createAssetCategory":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createAssetCategory(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateAssetCategory":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateAssetCategory(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6599,9 +8365,44 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateIncomeRecord":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateIncomeRecord(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateExpenseRecord":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateExpenseRecord(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateTransferRecord":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateTransferRecord(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteRecord":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteRecord(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createTag":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createTag(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateTag":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateTag(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6766,6 +8567,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "record":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_record(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "records":
 			field := field
 
@@ -6776,6 +8599,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_records(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "recordsPerMonth":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_recordsPerMonth(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6973,6 +8818,42 @@ func (ec *executionContext) _Record(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Record_assetChangeExpense(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "tags":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Record_tags(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -7929,6 +9810,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNTag2kakeiboᚑwebᚑserverᚋdomainᚐTag(ctx context.Context, sel ast.SelectionSet, v domain.Tag) graphql.Marshaler {
 	return ec._Tag(ctx, sel, &v)
 }
@@ -8331,6 +10242,36 @@ func (ec *executionContext) unmarshalNdeleteTagInput2kakeiboᚑwebᚑserverᚋdo
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNupdateAssetCategoryInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateAssetCategoryInput(ctx context.Context, v any) (domain.UpdateAssetCategoryInput, error) {
+	res, err := ec.unmarshalInputupdateAssetCategoryInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNupdateAssetInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateAssetInput(ctx context.Context, v any) (domain.UpdateAssetInput, error) {
+	res, err := ec.unmarshalInputupdateAssetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNupdateExpenseRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateExpenseRecordInput(ctx context.Context, v any) (domain.UpdateExpenseRecordInput, error) {
+	res, err := ec.unmarshalInputupdateExpenseRecordInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNupdateIncomeRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateIncomeRecordInput(ctx context.Context, v any) (domain.UpdateIncomeRecordInput, error) {
+	res, err := ec.unmarshalInputupdateIncomeRecordInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNupdateTagInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateTagInput(ctx context.Context, v any) (domain.UpdateTagInput, error) {
+	res, err := ec.unmarshalInputupdateTagInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNupdateTransferRecordInput2kakeiboᚑwebᚑserverᚋdomainᚐUpdateTransferRecordInput(ctx context.Context, v any) (domain.UpdateTransferRecordInput, error) {
+	res, err := ec.unmarshalInputupdateTransferRecordInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOAssetCategory2ᚖkakeiboᚑwebᚑserverᚋdomainᚐAssetCategory(ctx context.Context, sel ast.SelectionSet, v *domain.AssetCategory) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -8369,6 +10310,42 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
@@ -8417,6 +10394,107 @@ func (ec *executionContext) marshalOPageCursor2ᚖkakeiboᚑwebᚑserverᚋdomai
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalORecordType2ᚕkakeiboᚑwebᚑserverᚋdomainᚐRecordTypeᚄ(ctx context.Context, v any) ([]domain.RecordType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]domain.RecordType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRecordType2kakeiboᚑwebᚑserverᚋdomainᚐRecordType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalORecordType2ᚕkakeiboᚑwebᚑserverᚋdomainᚐRecordTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []domain.RecordType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRecordType2kakeiboᚑwebᚑserverᚋdomainᚐRecordType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

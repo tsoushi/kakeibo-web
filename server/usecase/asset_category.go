@@ -16,6 +16,21 @@ func (u *Usecase) CreateAssetCategory(ctx context.Context, userID domain.UserID,
 	return assetCategory, nil
 }
 
+func (u *Usecase) UpdateAssetCategory(ctx context.Context, userID domain.UserID, id domain.AssetCategoryID, name string) (*domain.AssetCategory, error) {
+	assetCategory := &domain.AssetCategory{
+		ID:     id,
+		UserID: userID,
+		Name:   name,
+	}
+
+	_, err := u.repo.AssetCategory.Update(ctx, assetCategory)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return assetCategory, nil
+}
+
 func (u *Usecase) GetAssetCategoryByID(ctx context.Context, userID domain.UserID, id domain.AssetCategoryID) (*domain.AssetCategory, error) {
 	category, err := u.repo.AssetCategory.GetByID(ctx, userID, id)
 	if err != nil {

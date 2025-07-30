@@ -18,10 +18,16 @@ extend type Query {
 
 extend type Mutation {
     createTag(input: createTagInput!): Tag!
-    deleteTag(input: deleteTagInput!): ID!
+    updateTag(input: updateTagInput!): Tag!
+    deleteTag(input: deleteTagInput!): Tag!
 }
 
 input createTagInput {
+    name: String!
+}
+
+input updateTagInput {
+    id: ID!
     name: String!
 }
 

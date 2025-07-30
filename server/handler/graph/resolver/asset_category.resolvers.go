@@ -17,6 +17,18 @@ func (r *assetCategoryResolver) ID(ctx context.Context, obj *domain.AssetCategor
 	return string(obj.ID), nil
 }
 
+// Assets is the resolver for the assets field.
+func (r *assetCategoryResolver) Assets(ctx context.Context, obj *domain.AssetCategory) ([]*domain.Asset, error) {
+	thunk := r.Loaders.AssetsByCategoryLoader.Load(ctx, obj.ID)
+
+	assets, err := thunk()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load assets for category %s: %w", obj.ID, err)
+	}
+
+	return assets, nil
+}
+
 // CreateAssetCategory is the resolver for the createAssetCategory field.
 func (r *mutationResolver) CreateAssetCategory(ctx context.Context, input domain.CreateAssetCategoryInput) (*domain.AssetCategory, error) {
 	userID, err := ctxdef.UserID(ctx)
@@ -32,19 +44,36 @@ func (r *mutationResolver) CreateAssetCategory(ctx context.Context, input domain
 	return assetCategory, nil
 }
 
-// DeleteAssetCategory is the resolver for the deleteAssetCategory field.
-func (r *mutationResolver) DeleteAssetCategory(ctx context.Context, input domain.DeleteAssetCategoryInput) (string, error) {
+// UpdateAssetCategory is the resolver for the updateAssetCategory field.
+func (r *mutationResolver) UpdateAssetCategory(ctx context.Context, input domain.UpdateAssetCategoryInput) (*domain.AssetCategory, error) {
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get user ID from context: %w", err)
+		return nil, fmt.Errorf("failed to get user ID from context: %w", err)
+	}
+
+	assetCategory, err := r.usecase.UpdateAssetCategory(ctx, userID, domain.AssetCategoryID(input.ID), input.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update asset category: %w", err)
+	}
+
+	return assetCategory, nil
+}
+
+// DeleteAssetCategory is the resolver for the deleteAssetCategory field.
+func (r *mutationResolver) DeleteAssetCategory(ctx context.Context, input domain.DeleteAssetCategoryInput) (*domain.AssetCategory, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user ID from context: %w", err)
 	}
 
 	assetCategoryID, err := r.usecase.DeleteAssetCategory(ctx, userID, domain.AssetCategoryID(input.ID))
 	if err != nil {
-		return "", fmt.Errorf("failed to delete asset category: %w", err)
+		return nil, fmt.Errorf("failed to delete asset category: %w", err)
 	}
 
-	return string(assetCategoryID), nil
+	return &domain.AssetCategory{
+		ID: assetCategoryID,
+	}, nil
 }
 
 // AssetCategories is the resolver for the assetCategories field.

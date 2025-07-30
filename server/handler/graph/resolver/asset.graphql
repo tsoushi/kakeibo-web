@@ -20,9 +20,17 @@ extend type Query {
 
 extend type Mutation {
     createAsset(input: createAssetInput!): Asset!
+    updateAsset(input: updateAssetInput!): Asset!
+    deleteAsset(id: ID!): Asset!
 }
 
 input createAssetInput {
+    name: String!
+    categoryId: ID
+}
+
+input updateAssetInput {
+    id: ID!
     name: String!
     categoryId: ID
 }

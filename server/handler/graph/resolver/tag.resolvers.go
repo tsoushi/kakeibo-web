@@ -28,19 +28,36 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input domain.CreateTag
 	return tag, nil
 }
 
-// DeleteTag is the resolver for the deleteTag field.
-func (r *mutationResolver) DeleteTag(ctx context.Context, input domain.DeleteTagInput) (string, error) {
+// UpdateTag is the resolver for the updateTag field.
+func (r *mutationResolver) UpdateTag(ctx context.Context, input domain.UpdateTagInput) (*domain.Tag, error) {
 	userID, err := ctxdef.UserID(ctx)
 	if err != nil {
-		return "", xerrors.Errorf(": %w", err)
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	tag, err := r.usecase.UpdateTag(ctx, userID, domain.TagID(input.ID), input.Name)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return tag, nil
+}
+
+// DeleteTag is the resolver for the deleteTag field.
+func (r *mutationResolver) DeleteTag(ctx context.Context, input domain.DeleteTagInput) (*domain.Tag, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
 	}
 
 	tag, err := r.usecase.DeleteTag(ctx, userID, domain.TagID(input.ID))
 	if err != nil {
-		return "", xerrors.Errorf(": %w", err)
+		return nil, xerrors.Errorf(": %w", err)
 	}
 
-	return string(tag), nil
+	return &domain.Tag{
+		ID: tag,
+	}, nil
 }
 
 // Tags is the resolver for the tags field.

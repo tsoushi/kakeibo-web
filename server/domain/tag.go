@@ -29,3 +29,30 @@ func NewTag(userID UserID, name string) *Tag {
 		UpdatedAt: time.Now(),
 	}
 }
+
+type Tags []*Tag
+
+func (t Tags) ContainsByName(name string) bool {
+	for _, tag := range t {
+		if tag.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func NewTagsNotExist(userID UserID, existTags Tags, names []string) []*Tag {
+	tags := make([]*Tag, 0, len(names))
+	for _, name := range names {
+		if !existTags.ContainsByName(name) {
+			tags = append(tags, NewTag(userID, name))
+		}
+	}
+
+	return tags
+}
+
+type TagWithRecordID struct {
+	Tag
+	RecordID RecordID
+}

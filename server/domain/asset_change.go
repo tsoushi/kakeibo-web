@@ -36,6 +36,24 @@ func NewAssetChange(userID UserID, recordID RecordID, assetID AssetID, amount in
 
 type AssetChanges []*AssetChange
 
+func (changes AssetChanges) Income() *AssetChange {
+	for _, change := range changes {
+		if change.Amount > 0 {
+			return change
+		}
+	}
+	return nil
+}
+
+func (changes AssetChanges) Expense() *AssetChange {
+	for _, change := range changes {
+		if change.Amount < 0 {
+			return change
+		}
+	}
+	return nil
+}
+
 type AssetChangeWithAt struct {
 	AssetChange
 	At time.Time // RecordのAtを持つ

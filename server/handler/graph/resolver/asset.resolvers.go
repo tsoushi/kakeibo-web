@@ -55,6 +55,42 @@ func (r *mutationResolver) CreateAsset(ctx context.Context, input domain.CreateA
 	return asset, nil
 }
 
+// UpdateAsset is the resolver for the updateAsset field.
+func (r *mutationResolver) UpdateAsset(ctx context.Context, input domain.UpdateAssetInput) (*domain.Asset, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	var assetCategoryID *domain.AssetCategoryID
+	if input.CategoryID != nil {
+		assetCategoryID = typeutil.Ptr(domain.AssetCategoryID(*input.CategoryID))
+	}
+
+	asset, err := r.usecase.UpdateAsset(ctx, userID, domain.AssetID(input.ID), input.Name, assetCategoryID)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+	return asset, nil
+}
+
+// DeleteAsset is the resolver for the deleteAsset field.
+func (r *mutationResolver) DeleteAsset(ctx context.Context, id string) (*domain.Asset, error) {
+	userID, err := ctxdef.UserID(ctx)
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	assetID, err := r.usecase.DeleteAsset(ctx, userID, domain.AssetID(id))
+	if err != nil {
+		return nil, xerrors.Errorf(": %w", err)
+	}
+
+	return &domain.Asset{
+		ID: assetID,
+	}, nil
+}
+
 // Assets is the resolver for the assets field.
 func (r *queryResolver) Assets(ctx context.Context, categoryID *string, sortKey domain.AssetSortKey, first *int, after *domain.PageCursor, last *int, before *domain.PageCursor) (*domain.AssetConnection, error) {
 	pageParam, err := domain.NewPageParam(first, after, last, before, string(sortKey))

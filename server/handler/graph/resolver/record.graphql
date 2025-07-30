@@ -11,6 +11,7 @@ type Record {
     at: Time!
     assetChangeIncome: AssetChange
     assetChangeExpense: AssetChange
+    tags: [Tag!]!
 }
 
 enum RecordType {
@@ -30,13 +31,21 @@ enum RecordSortKey {
 }
 
 extend type Query {
+    record(id: ID!): Record!
     records(assetID: ID, sortKey: RecordSortKey! = AT, first: Int, after: PageCursor, last: Int, before: PageCursor): RecordConnection!
+    recordsPerMonth(year: Int!, month: Int!, tagNames: [String!], assetIds: [ID!], recordTypes: [RecordType!], sortkey: RecordSortKey! = AT, first: Int, after: PageCursor, last: Int, before: PageCursor): RecordConnection!
 }
 
 extend type Mutation {
     createIncomeRecord(input: createIncomeRecordInput!): Record!
     createExpenseRecord(input: createExpenseRecordInput!): Record!
     createTransferRecord(input: createTransferRecordInput!): Record!
+    
+    updateIncomeRecord(input: updateIncomeRecordInput!): Record!
+    updateExpenseRecord(input: updateExpenseRecordInput!): Record!
+    updateTransferRecord(input: updateTransferRecordInput!): Record!
+    
+    deleteRecord(id: ID!): Record!
 }
 
 input createIncomeRecordInput {
@@ -45,6 +54,7 @@ input createIncomeRecordInput {
     at: Time!
     assetID: ID!
     amount: Int!
+    tags: [String!]!
 }
 
 input createExpenseRecordInput {
@@ -53,6 +63,7 @@ input createExpenseRecordInput {
     at: Time!
     assetID: ID!
     amount: Int!
+    tags: [String!]!
 }
 
 input createTransferRecordInput {
@@ -62,4 +73,36 @@ input createTransferRecordInput {
     fromAssetID: ID!
     toAssetID: ID!
     amount: Int!
+    tags: [String!]!
+}
+
+input updateIncomeRecordInput {
+    id: ID!
+    title: String! 
+    description: String!
+    at: Time!
+    assetID: ID!
+    amount: Int!
+    tags: [String!]!
+}
+
+input updateExpenseRecordInput {
+    id: ID!
+    title: String! 
+    description: String!
+    at: Time!
+    assetID: ID!
+    amount: Int!
+    tags: [String!]!
+}
+
+input updateTransferRecordInput {
+    id: ID!
+    title: String! 
+    description: String!
+    at: Time!
+    fromAssetID: ID!
+    toAssetID: ID!
+    amount: Int!
+    tags: [String!]!
 }

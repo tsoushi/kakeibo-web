@@ -15,6 +15,7 @@ type Repository struct {
 	Asset               *AssetRepository
 	AssetCategory       *AssetCategoryRepository
 	Tag                 *TagRepository
+	RecordTag           *RecordTagRepository
 	Record              *RecordRepository
 	AssetChange         *AssetChangeRepository
 	TotalAssetsSnapshot *TotalAssetsSnapshotRepository
@@ -27,6 +28,7 @@ func NewRepository(sess *dbr.Session) *Repository {
 		Asset:               NewAssetRepository(sess),
 		AssetCategory:       NewAssetCategoryRepository(sess),
 		Tag:                 NewTagRepository(sess),
+		RecordTag:           NewRecordTagRepository(sess),
 		Record:              NewRecordRepository(sess),
 		AssetChange:         NewAssetChangeRepository(sess),
 		TotalAssetsSnapshot: NewTotalAssetsSnapshotRepository(sess),

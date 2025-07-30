@@ -34,6 +34,41 @@ func (r *AssetChangeRepository) Insert(ctx context.Context, change *domain.Asset
 	return change, nil
 }
 
+func (r *AssetChangeRepository) Update(ctx context.Context, change *domain.AssetChange) (*domain.AssetChange, error) {
+	runner := getRunner(ctx, r.sess)
+	result, err := runner.Update(assetChangeTableName).
+		Set("asset_id", change.AssetID).
+		Set("amount", change.Amount).
+		Where("id = ? AND user_id = ?", change.ID, change.UserID).
+		Exec()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to update asset change: %w", err)
+	}
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return nil, domain.ErrEntityNotFound
+	}
+	return change, nil
+}
+
+func (r *AssetChangeRepository) GetMultiByRecordID(ctx context.Context, userID domain.UserID, recordID domain.RecordID) (domain.AssetChanges, error) {
+	runner := getRunner(ctx, r.sess)
+	changes := make([]*domain.AssetChange, 0)
+
+	_, err := runner.Select("*").
+		From(assetChangeTableName).
+		Where("user_id = ? AND record_id = ?", userID, recordID).
+		LoadContext(ctx, &changes)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get asset changes by record ID: %w", err)
+	}
+
+	return changes, nil
+}
+
 func (r *AssetChangeRepository) GetMultiByRecordIDs(ctx context.Context, userID domain.UserID, recordIDs []domain.RecordID) ([]*domain.AssetChange, error) {
 	runner := getRunner(ctx, r.sess)
 	changes := make([]*domain.AssetChange, 0)

@@ -31,6 +31,45 @@ func (r *AssetRepository) Insert(ctx context.Context, asset *domain.Asset) (*dom
 	return asset, nil
 }
 
+func (r *AssetRepository) Update(ctx context.Context, asset *domain.Asset) (*domain.Asset, error) {
+	runner := getRunner(ctx, r.sess)
+	result, err := runner.Update(assettableName).
+		Set("name", asset.Name).
+		Set("category_id", asset.CategoryID).
+		Where("id = ? AND user_id = ?", asset.ID, asset.UserID).
+		Exec()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to update asset: %w", err)
+	}
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return nil, domain.ErrEntityNotFound
+	}
+
+	return asset, nil
+}
+
+func (r *AssetRepository) Delete(ctx context.Context, asset *domain.Asset) (domain.AssetID, error) {
+	runner := getRunner(ctx, r.sess)
+	result, err := runner.DeleteFrom(assettableName).
+		Where("id = ? AND user_id = ?", asset.ID, asset.UserID).
+		Exec()
+	if err != nil {
+		return "", xerrors.Errorf("failed to delete asset: %w", err)
+	}
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return "", xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return "", domain.ErrEntityNotFound
+	}
+	return asset.ID, nil
+}
+
 func (r *AssetRepository) List(ctx context.Context, userID domain.UserID) ([]*domain.Asset, error) {
 	runner := getRunner(ctx, r.sess)
 	assets := make([]*domain.Asset, 0)
@@ -109,6 +148,28 @@ func (r *AssetRepository) GetMultiByUserIDAndIDs(ctx context.Context, userID dom
 			return nil, domain.ErrEntityNotFound
 		}
 		return nil, xerrors.Errorf("failed to get assets by userID and IDs: %w", err)
+	}
+
+	return assets, nil
+}
+
+func (r *AssetRepository) GetMultiByCategoryIDs(ctx context.Context, userID domain.UserID, categoryIDs []domain.AssetCategoryID) ([]*domain.Asset, error) {
+	runner := getRunner(ctx, r.sess)
+	assets := make([]*domain.Asset, 0)
+
+	if len(categoryIDs) == 0 {
+		return assets, nil
+	}
+
+	_, err := runner.Select("*").
+		From(assettableName).
+		Where("user_id = ? AND category_id IN ?", userID, categoryIDs).
+		LoadContext(ctx, &assets)
+	if err != nil {
+		if errors.Is(err, dbr.ErrNotFound) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, xerrors.Errorf("failed to get assets by userID and category IDs: %w", err)
 	}
 
 	return assets, nil

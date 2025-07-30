@@ -29,6 +29,27 @@ func (r *AssetCategoryRepository) Insert(ctx context.Context, category *domain.A
 	return category, nil
 }
 
+func (r *AssetCategoryRepository) Update(ctx context.Context, category *domain.AssetCategory) (*domain.AssetCategory, error) {
+	runner := getRunner(ctx, r.sess)
+	result, err := runner.Update("asset_category").
+		Set("name", category.Name).
+		Where("id = ? AND user_id = ?", category.ID, category.UserID).
+		Exec()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to update asset category: %w", err)
+	}
+
+	resultCount, err := result.RowsAffected()
+	if err != nil {
+		return nil, xerrors.Errorf("failed to get affected rows: %w", err)
+	}
+	if resultCount == 0 {
+		return nil, domain.ErrEntityNotFound
+	}
+
+	return category, nil
+}
+
 func (r *AssetCategoryRepository) GetByID(ctx context.Context, userID domain.UserID, id domain.AssetCategoryID) (*domain.AssetCategory, error) {
 	runner := getRunner(ctx, r.sess)
 	category := &domain.AssetCategory{}
