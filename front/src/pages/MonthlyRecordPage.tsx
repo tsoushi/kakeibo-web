@@ -31,7 +31,6 @@ import {
   Chip,
   FormControlLabel,
   Checkbox,
-  IconButton,
   Card,
   CardContent,
   CardActions

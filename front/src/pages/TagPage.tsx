@@ -97,9 +97,9 @@ export default function TagPage() {
   const [{ data, fetching, error }, reexecuteQuery] = useQuery({ query: GetTagsDocument });
   
   // ミューテーション関数の取得
-  const [createTagResult, createTag] = useMutation(CreateTagDocument);
-  const [updateTagResult, updateTag] = useMutation(UpdateTagDocument);
-  const [deleteTagResult, deleteTagMutation] = useMutation(DeleteTagDocument);
+  const [, createTag] = useMutation(CreateTagDocument);
+  const [, updateTag] = useMutation(UpdateTagDocument);
+  const [, deleteTagMutation] = useMutation(DeleteTagDocument);
 
   // 作成ダイアログを開く
   const handleOpenCreateDialog = () => {
