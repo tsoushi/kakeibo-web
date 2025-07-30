@@ -1,7 +1,11 @@
 import { Route, Routes } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
 import UserHome from './UserHome.tsx'
-import RecordPage from './Record.tsx'
+import MonthlyRecordPage from './pages/MonthlyRecordPage.tsx'
+import AssetPage from './pages/AssetPage.tsx'
+import AssetCategoryPage from './pages/AssetCategoryPage.tsx'
+import TagPage from './pages/TagPage.tsx'
+import RecordDetailPage from './pages/RecordDetailPage.tsx'
 
 
 function App() {
@@ -27,7 +31,11 @@ function App() {
     <div>
       <Routes>
         <Route path="/" element={<UserHome />}></Route>
-        <Route path="/record" element={<RecordPage />}></Route>
+        <Route path="/record/monthly/:year/:month" element={<MonthlyRecordPage />}></Route>
+        <Route path="/record/:recordId" element={<RecordDetailPage />}></Route>
+        <Route path="/asset" element={<AssetPage />}></Route>
+        <Route path="/asset/category" element={<AssetCategoryPage />}></Route>
+        <Route path="/tag" element={<TagPage />}></Route>
       </Routes>
       <button onClick={() => signOutRedirect()}>Log Out</button>
     </div>
