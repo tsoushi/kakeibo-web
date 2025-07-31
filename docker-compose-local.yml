@@ -32,7 +32,7 @@ services:
   server:
     image: golang:1.23.8
     ports:
-      - "8080:8080"
+      - "3011:8080"
     volumes:
       - ./server:/app
     working_dir: /app
@@ -56,7 +56,6 @@ services:
       dockerfile: Dockerfile
       args:
         - GRAPHQL_CODEGEN_SCHEMA_URL=${GRAPHQL_CODEGEN_SCHEMA_URL}
-    user: "node"
     working_dir: /home/node/app
     ports:
       - "3010:3000"
