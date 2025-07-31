@@ -23,7 +23,7 @@ const authConfig = async (utils: AuthUtilities): Promise<AuthConfig> => {
     async refreshAuth() {
       console.log('Refreshing auth...')
     },
-    willAuthError(operation) {
+    willAuthError(_operation) {
       const user = getCognitoUser()
 
       if (!user) {

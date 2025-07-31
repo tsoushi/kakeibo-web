@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import { useQuery, useMutation } from "urql";
 import { graphql } from "../gql";
-import { RecordType } from "../gql/graphql";
+import type { RecordType } from "../gql/graphql";
 
 // 日時を「yyyy年MM月dd日 HH時mm分ss秒」形式でフォーマットする関数
 const formatDateTime = (dateString: string) => {
@@ -178,7 +178,7 @@ export default function MonthlyRecordPage() {
   const [newRecord, setNewRecord] = useState({
     title: "",
     description: "",
-    recordType: RecordType.Expense,
+    recordType: "EXPENSE" as RecordType,
     at: new Date(),
     assetId: "",
     fromAssetId: "",
@@ -279,7 +279,7 @@ export default function MonthlyRecordPage() {
     setNewRecord({
       title: "",
       description: "",
-      recordType: RecordType.Expense,
+      recordType: "EXPENSE" as RecordType,
       at: new Date(),
       assetId: "",
       fromAssetId: "",
@@ -303,7 +303,7 @@ export default function MonthlyRecordPage() {
 
       // レコードタイプに応じて適切なミューテーションを実行
       switch (newRecord.recordType) {
-        case RecordType.Income:
+        case "INCOME":
           result = await createIncomeRecord({
             input: {
               title: newRecord.title,
@@ -316,7 +316,7 @@ export default function MonthlyRecordPage() {
           });
           break;
         
-        case RecordType.Expense:
+        case "EXPENSE":
           result = await createExpenseRecord({
             input: {
               title: newRecord.title,
@@ -329,7 +329,7 @@ export default function MonthlyRecordPage() {
           });
           break;
         
-        case RecordType.Transfer:
+        case "TRANSFER":
           result = await createTransferRecord({
             input: {
               title: newRecord.title,
@@ -391,9 +391,9 @@ export default function MonthlyRecordPage() {
   // レコードタイプに基づいて色を取得する関数
   const getRecordTypeColor = (type: RecordType) => {
     switch (type) {
-      case RecordType.Expense: return 'error';
-      case RecordType.Income: return 'success';
-      case RecordType.Transfer: return 'info';
+      case "EXPENSE": return 'error';
+      case "INCOME": return 'success';
+      case "TRANSFER": return 'info';
       default: return 'default';
     }
   };
@@ -401,23 +401,23 @@ export default function MonthlyRecordPage() {
   // レコードタイプの日本語表示
   const getRecordTypeLabel = (type: RecordType) => {
     switch (type) {
-      case RecordType.Expense: return '支出';
-      case RecordType.Income: return '収入';
-      case RecordType.Transfer: return '振替';
+      case "EXPENSE": return '支出';
+      case "INCOME": return '収入';
+      case "TRANSFER": return '振替';
       default: return type;
     }
   };
 
   // 月の合計を計算
   const totalExpense = records
-    .filter((r) => r.recordType === RecordType.Expense)
+    .filter((r) => r.recordType === "EXPENSE")
     .reduce((sum: number, record) => {
       const amount = record.assetChangeExpense?.amount || 0;
       return sum + Math.abs(amount);
     }, 0);
 
   const totalIncome = records
-    .filter((r) => r.recordType === RecordType.Income)
+    .filter((r) => r.recordType === "INCOME")
     .reduce((sum: number, record) => {
       const amount = record.assetChangeIncome?.amount || 0;
       return sum + amount;
@@ -426,12 +426,12 @@ export default function MonthlyRecordPage() {
   // 各レコードでの資産変化と累積総資産を計算する関数
   const calculateCumulativeAssets = () => {
     let cumulativeAssets = initialTotalAssets;
-    const recordsWithCumulativeAssets = sortedRecords.map((record: any) => {
+    const recordsWithCumulativeAssets = sortedRecords.map((record) => {
       let assetChange = 0;
       
-      if (record.recordType === RecordType.Income && record.assetChangeIncome) {
+      if (record.recordType === "INCOME" && record.assetChangeIncome) {
         assetChange = record.assetChangeIncome.amount;
-      } else if (record.recordType === RecordType.Expense && record.assetChangeExpense) {
+      } else if (record.recordType === "EXPENSE" && record.assetChangeExpense) {
         assetChange = -Math.abs(record.assetChangeExpense.amount);
       }
       // 振替の場合、総資産には影響なし
@@ -594,18 +594,18 @@ export default function MonthlyRecordPage() {
         </Paper>
       ) : (
         <Stack spacing={2}>
-          {recordsWithAssets.map((record: any) => {
+          {recordsWithAssets.map((record) => {
             let amount = 0;
             let assetName = '';
             
             // レコードタイプに応じた金額と資産名の取得
-            if (record.recordType === RecordType.Income && record.assetChangeIncome) {
+            if (record.recordType === "INCOME" && record.assetChangeIncome) {
               amount = record.assetChangeIncome.amount;
               assetName = record.assetChangeIncome.asset.name;
-            } else if (record.recordType === RecordType.Expense && record.assetChangeExpense) {
+            } else if (record.recordType === "EXPENSE" && record.assetChangeExpense) {
               amount = -Math.abs(record.assetChangeExpense.amount);
               assetName = record.assetChangeExpense.asset.name;
-            } else if (record.recordType === RecordType.Transfer) {
+            } else if (record.recordType === "TRANSFER") {
               // 振替の場合は入金と出金の両方の情報を表示するための準備
               const fromAsset = record.assetChangeExpense?.asset.name || '';
               const toAsset = record.assetChangeIncome?.asset.name || '';
@@ -685,12 +685,12 @@ export default function MonthlyRecordPage() {
             <FormControlLabel
               control={
                 <Checkbox 
-                  checked={tempRecordTypeFilter.includes(RecordType.Expense)}
+                  checked={tempRecordTypeFilter.includes("EXPENSE")}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setTempRecordTypeFilter(prev => [...prev, RecordType.Expense]);
+                      setTempRecordTypeFilter(prev => [...prev, "EXPENSE"]);
                     } else {
-                      setTempRecordTypeFilter(prev => prev.filter(t => t !== RecordType.Expense));
+                      setTempRecordTypeFilter(prev => prev.filter(t => t !== "EXPENSE"));
                     }
                   }}
                 />
@@ -700,12 +700,12 @@ export default function MonthlyRecordPage() {
             <FormControlLabel
               control={
                 <Checkbox 
-                  checked={tempRecordTypeFilter.includes(RecordType.Income)}
+                  checked={tempRecordTypeFilter.includes("INCOME")}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setTempRecordTypeFilter(prev => [...prev, RecordType.Income]);
+                      setTempRecordTypeFilter(prev => [...prev, "INCOME"]);
                     } else {
-                      setTempRecordTypeFilter(prev => prev.filter(t => t !== RecordType.Income));
+                      setTempRecordTypeFilter(prev => prev.filter(t => t !== "INCOME"));
                     }
                   }}
                 />
@@ -715,12 +715,12 @@ export default function MonthlyRecordPage() {
             <FormControlLabel
               control={
                 <Checkbox 
-                  checked={tempRecordTypeFilter.includes(RecordType.Transfer)}
+                  checked={tempRecordTypeFilter.includes("TRANSFER")}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setTempRecordTypeFilter(prev => [...prev, RecordType.Transfer]);
+                      setTempRecordTypeFilter(prev => [...prev, "TRANSFER"]);
                     } else {
-                      setTempRecordTypeFilter(prev => prev.filter(t => t !== RecordType.Transfer));
+                      setTempRecordTypeFilter(prev => prev.filter(t => t !== "TRANSFER"));
                     }
                   }}
                 />
