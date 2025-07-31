@@ -1,5 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { useAuth } from 'react-oidc-context'
+import { Button, Box, AppBar, Toolbar, Typography } from '@mui/material'
+import LogoutIcon from '@mui/icons-material/Logout'
 import UserHome from './UserHome.tsx'
 import MonthlyRecordPage from './pages/MonthlyRecordPage.tsx'
 import AssetPage from './pages/AssetPage.tsx'
@@ -28,17 +30,32 @@ function App() {
   };
 
   return (
-    <div>
-      <Routes>
-        <Route path="/" element={<UserHome />}></Route>
-        <Route path="/record/monthly/:year/:month" element={<MonthlyRecordPage />}></Route>
-        <Route path="/record/:recordId" element={<RecordDetailPage />}></Route>
-        <Route path="/asset" element={<AssetPage />}></Route>
-        <Route path="/asset/category" element={<AssetCategoryPage />}></Route>
-        <Route path="/tag" element={<TagPage />}></Route>
-      </Routes>
-      <button onClick={() => signOutRedirect()}>Log Out</button>
-    </div>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static" color="primary" sx={{ mb: 2 }}>
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            家計簿アプリ
+          </Typography>
+          <Button 
+            color="inherit" 
+            onClick={signOutRedirect}
+            startIcon={<LogoutIcon />}
+          >
+            ログアウト
+          </Button>
+        </Toolbar>
+      </AppBar>
+      <Box sx={{ p: 2 }}>
+        <Routes>
+          <Route path="/" element={<UserHome />}></Route>
+          <Route path="/record/monthly/:year/:month" element={<MonthlyRecordPage />}></Route>
+          <Route path="/record/:recordId" element={<RecordDetailPage />}></Route>
+          <Route path="/asset" element={<AssetPage />}></Route>
+          <Route path="/asset/category" element={<AssetCategoryPage />}></Route>
+          <Route path="/tag" element={<TagPage />}></Route>
+        </Routes>
+      </Box>
+    </Box>
   )
 }
 
