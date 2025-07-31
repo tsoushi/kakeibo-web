@@ -36,7 +36,7 @@ func (r *AssetChangeRepository) Insert(ctx context.Context, change *domain.Asset
 
 func (r *AssetChangeRepository) Update(ctx context.Context, change *domain.AssetChange) (*domain.AssetChange, error) {
 	runner := getRunner(ctx, r.sess)
-	result, err := runner.Update(assetChangeTableName).
+	_, err := runner.Update(assetChangeTableName).
 		Set("asset_id", change.AssetID).
 		Set("amount", change.Amount).
 		Where("id = ? AND user_id = ?", change.ID, change.UserID).
@@ -44,13 +44,7 @@ func (r *AssetChangeRepository) Update(ctx context.Context, change *domain.Asset
 	if err != nil {
 		return nil, xerrors.Errorf("failed to update asset change: %w", err)
 	}
-	resultCount, err := result.RowsAffected()
-	if err != nil {
-		return nil, xerrors.Errorf("failed to get affected rows: %w", err)
-	}
-	if resultCount == 0 {
-		return nil, domain.ErrEntityNotFound
-	}
+
 	return change, nil
 }
 
