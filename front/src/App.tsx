@@ -14,7 +14,7 @@ function App() {
   const auth = useAuth()
 
   if (!auth.isAuthenticated && !auth.isLoading) {
-    auth.signinRedirect()
+    auth.signinRedirect({ui_locales: "ja"})
     return <div>Redirecting to login...</div>
   }
   if (auth.isLoading) {
