@@ -35,7 +35,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 // GraphQL クエリ定義
 const GetAssetsDocument = graphql(/* GraphQL */ `
   query GetAssets {
-    assets(first: 100) {
+    assets(first: 99999) {
       nodes {
         id
         name
@@ -49,6 +49,12 @@ const GetAssetsDocument = graphql(/* GraphQL */ `
         endCursor   
         startCursor
         endCursor
+      }
+    }
+    assetCategories(first: 99999) {
+      nodes {
+        id
+        name
       }
     }
   }
@@ -237,16 +243,7 @@ export default function AssetPage() {
 
   const assets = data?.assets?.nodes || [];
   // サーバーからカテゴリデータを取得するクエリがないため、資産データから取得
-  const assetCategoriesMap = new Map();
-  
-  // 資産からカテゴリ情報を抽出
-  assets.forEach(asset => {
-    if (asset.category) {
-      assetCategoriesMap.set(asset.category.id, asset.category);
-    }
-  });
-  
-  const assetCategories = Array.from(assetCategoriesMap.values());
+  const assetCategories = data?.assetCategories?.nodes || [];
 
   // カテゴリでグループ化された資産を取得
   interface CategoryGroup {
