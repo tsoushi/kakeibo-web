@@ -39,6 +39,7 @@ services:
     command: go run server.go
 
     environment:
+      TZ: Asia/Tokyo
       MYSQL_DATABASE: ${MYSQL_DATABASE} # MySQLに用意されている初期データベースの名前 
       MYSQL_USERNAME: ${MYSQL_USERNAME} # MySQLのユーザー名
       MYSQL_USERPASS: ${MYSQL_USERPASS} # MySQLのユーザーパスワード
