@@ -3,7 +3,7 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: "../server/handler/graph/resolver/*.graphql",
+  schema: process.env.GRAPHQL_CODEGEN_SCHEMA_URL || "../server/handler/graph/resolver/*.graphql",
   documents: "src/**/*.tsx",
   ignoreNoDocuments: true,
   generates: {
@@ -12,6 +12,7 @@ const config: CodegenConfig = {
       plugins: [],
       config: {
         useTypeImports: true,
+        enumsAsTypes: true,
       }
     }
   },

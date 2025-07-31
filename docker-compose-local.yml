@@ -49,3 +49,25 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+  
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+      args:
+        - GRAPHQL_CODEGEN_SCHEMA_URL=${GRAPHQL_CODEGEN_SCHEMA_URL}
+    user: "node"
+    working_dir: /home/node/app
+    ports:
+      - "3010:3000"
+    command: "npm run preview"
+    environment:
+      - NODE_ENV=production
+      - VITE_GRAPHQL_SERVER_URL=${VITE_GRAPHQL_SERVER_URL}
+      - VITE_COGNITO_CLIENT_ID=${VITE_COGNITO_CLIENT_ID}
+      - VITE_COGNITO_DOMAIN=${VITE_COGNITO_DOMAIN}
+      - VITE_COGNITO_AUTHORITY=${VITE_COGNITO_AUTHORITY}
+      - VITE_FRONT_URL=${VITE_FRONT_URL}
+
+    depends_on:
+      - server
