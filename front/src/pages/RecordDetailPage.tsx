@@ -202,7 +202,8 @@ export default function RecordDetailPage() {
     fromAssetID: "",
     toAssetID: "",
     amount: 0,
-    tags: [] as string[]
+    tags: [] as string[],
+    tagInput: "" // カンマ区切りのタグ入力用
   });
 
   // ダイアログの状態
@@ -229,6 +230,7 @@ export default function RecordDetailPage() {
   const handleOpenEditDialog = () => {
     if (data?.record) {
       // レコードタイプに応じて適切な初期化を行う
+      const tags = data.record.tags ? data.record.tags.map((tag: { id: string, name: string }) => tag.name) : [];
       const formData = {
         id: data.record.id,
         title: data.record.title,
@@ -239,7 +241,8 @@ export default function RecordDetailPage() {
         fromAssetID: "",
         toAssetID: "",
         amount: 0,
-        tags: data.record.tags ? data.record.tags.map((tag: { id: string, name: string }) => tag.name) : []
+        tags: tags,
+        tagInput: tags.join(', ')
       };
 
       // レコードタイプに応じて資産とアマウントを設定
@@ -660,13 +663,18 @@ export default function RecordDetailPage() {
                   margin="normal"
                   fullWidth
                   label="タグ (カンマ区切り)"
-                  value={recordForm.tags.join(', ')}
+                  value={recordForm.tagInput}
                   onChange={(e) => {
                     const tagInput = e.target.value;
+                    // 入力値をそのまま保存
+                    handleFormChange('tagInput', tagInput);
+                    
+                    // カンマ区切りで分割してタグ配列に変換
                     const tagNames = tagInput
                       .split(',')
                       .map(tag => tag.trim())
                       .filter(tag => tag !== '');
+                    
                     handleFormChange('tags', tagNames);
                   }}
                   placeholder="例: 食費, 日用品, 交通費"
@@ -680,7 +688,10 @@ export default function RecordDetailPage() {
                         label={tagName} 
                         size="small"
                         onDelete={() => {
-                          handleFormChange('tags', recordForm.tags.filter(t => t !== tagName));
+                          const newTagNames = recordForm.tags.filter(t => t !== tagName);
+                          handleFormChange('tags', newTagNames);
+                          // tagInputも更新
+                          handleFormChange('tagInput', newTagNames.join(', '));
                         }}
                       />
                     ))}
