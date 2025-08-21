@@ -8,12 +8,17 @@ local/down:
 
 local/restart: local/down local/up
 
+local/build:
+	docker compose -f docker-compose-local.yml build front
+
+local/build_restart: local/build local/down local/up
+
 server_gqlgen:
 	make -C ./server gen
 
 install_tools/linux:
 	mkdir ./bin
-	wget -O - https://github.com/sqldef/sqldef/releases/latest/download/mysqldef_licux_amd64.tar.gz | tar -xvz -C ./bin
+	wget -O - https://github.com/sqldef/sqldef/releases/latest/download/mysqldef_linux_amd64.tar.gz | tar -xvz -C ./bin
 
 install_tools/mac:
 	brew install sqldef/sqldef/mysqldef

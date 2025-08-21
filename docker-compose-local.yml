@@ -60,7 +60,7 @@ services:
     working_dir: /home/node/app
     ports:
       - "3010:3000"
-    command: "npm run preview"
+    command: "bash -c \"npm run build && npm run preview\""
     environment:
       - NODE_ENV=production
       - VITE_GRAPHQL_SERVER_URL=${VITE_GRAPHQL_SERVER_URL}
